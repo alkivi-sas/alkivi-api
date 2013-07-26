@@ -87,7 +87,7 @@ logger.log(OVH_PCA.getSessions())
 License
 -------
 
-node-ovh is freely distributable under the terms of the MIT license.
+alkivi-api is freely distributable under the terms of the MIT license.
 
 ```
 Copyright (c) 2013 Alkivi SAS <admin@alkivi.fr>
