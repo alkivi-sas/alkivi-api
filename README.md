@@ -35,7 +35,7 @@ echo "applicationKey:applicationSecret:consumerKey" > path/.secureData/api_ovh/p
 Examples
 -------
 
-Now let's create a simple python file test.py
+Now let's create a simple python file test.py (check samples/OVH.py)
 ```python
 #!/usr/bin/python
 
