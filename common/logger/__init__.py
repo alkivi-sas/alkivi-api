@@ -200,7 +200,6 @@ class Logger():
     """
     def newLoopLogger(self):
         # Do we have already a logger ?
-
         newLogger = LoggerIteration(
                 subject                = "%s_%i" % (self.subject, len(self.loggers)),
                 min_log_level_to_print = self.min_log_level_to_print,
@@ -212,17 +211,19 @@ class Logger():
                 )
 
 
-        self.currentLogger = newLogger
         self.loggers.append(newLogger)
+        self.currentLogger = self.loggers[-1]
 
     def delLoopLogger(self):
         # Flush data (i.e send email if needed)
         self.currentLogger.flush()
+        self.currentLogger.disable() # Disable current logger
 
-        # Only if more than one loggers
+        # Only if more than one logger
         if(len(self.loggers)>1):
             self.loggers.pop()
             self.currentLogger = self.loggers[-1]
+            self.currentLogger.enable() # Was previously disabled
 
     def newIteration(self, *args, **kwargs):
         # Flush data (i.e send email if needed)
@@ -252,26 +253,30 @@ class LoggerIteration():
         self.logger.setLevel(NOTSET)
 
         # Empty handler by default
-        self.handlers       = []
-        self.bufferHandler  = None
-        self.consoleHandler = None
-        self.fileHandler    = None
-        self.emailHandler   = None
-        self.syslogHandler  = None
+        self.handlers               = []
+        self.bufferHandler          = None
+        self.consoleHandler         = None
+        self.fileHandler            = None
+        self.emailHandler           = None
+        self.syslogHandler          = None
+        self.min_log_level_to_print = min_log_level_to_print
+        self.min_log_level_to_save  = min_log_level_to_save
+        self.min_log_level_to_mail  = min_log_level_to_mail
 
         # Define prefixes : add old logger prefix if present
         if(currentLogger != None):
-            self.basePrefixes = currentLogger.prefixes
+            self.basePrefixes = currentLogger.basePrefixes + currentLogger.prefixes
+            currentLogger.disable() # Needed not to print duplicate
         else:
             self.basePrefixes = []
 
         self.prefixes     = []
         
 
-        if(min_log_level_to_print != None):
+        if(self.min_log_level_to_print != None):
             # Stream Handler
             self.consoleHandler = logging.StreamHandler()
-            self.consoleHandler.setLevel(min_log_level_to_print)
+            self.consoleHandler.setLevel(self.min_log_level_to_print)
             self.handlers.append(self.consoleHandler)
 
             # Syslog handler :)
@@ -280,14 +285,14 @@ class LoggerIteration():
             #self.syslogHandler.setFormatter(self.formatter)
             #self.logger.addHandler(self.syslogHandler)
 
-        if(min_log_level_to_save != None):
+        if(self.min_log_level_to_save != None):
             self.fileHandler = logging.handlers.TimedRotatingFileHandler(filename, when='midnight')
-            self.fileHandler.setLevel(min_log_level_to_save)
+            self.fileHandler.setLevel(self.min_log_level_to_save)
             self.handlers.append(self.fileHandler)
 
 
-        if(min_log_level_to_mail != None and len(emails) > 0):
-            self.emailHandler = AlkiviEmailHandler(mailhost='127.0.0.1', fromaddr="%s@%s" % (user, host), toaddrs=emails, level=min_log_level_to_mail)
+        if(self.min_log_level_to_mail != None and len(emails) > 0):
+            self.emailHandler = AlkiviEmailHandler(mailhost='127.0.0.1', fromaddr="%s@%s" % (user, host), toaddrs=emails, level=self.min_log_level_to_mail)
             self.emailHandler.setLevel(NOTSET) # Needed, we want all log to go thought this
 
             self.handlers.append(self.emailHandler)
@@ -316,11 +321,11 @@ class LoggerIteration():
 
         for prefix in self.basePrefixes:
             if(prefix):
-                format = format + ' [%s]' % (prefix)
+                format += ' [%s]' % (prefix)
 
         for prefix in self.prefixes:
             if(prefix):
-                format = format + ' [%s]' % (prefix)
+                format += ' [%s]' % (prefix)
 
         format = format + ' %(message)s'
         self.formatter = logging.Formatter(format)
@@ -352,6 +357,21 @@ class LoggerIteration():
 
         self.setFormatter()
         self.setHandlers()
+
+    """
+        Enable disable handler on the go
+    """
+    def disable(self):
+        for handler in self.handlers:
+            handler.setLevel(200) # Ugly but efficient
+
+    def enable(self):
+        if(self.consoleHandler):
+            self.consoleHandler.setLevel(self.min_log_level_to_print)
+        if(self.fileHandler):
+            self.fileHandler.setLevel(self.min_log_level_to_save)
+        if(self.emailHandler):
+            self.emailHandler.setLevel(NOTSET)
 
     def flush(self):
         # Flush all buffer ? just email ?
