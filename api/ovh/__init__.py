@@ -27,15 +27,14 @@ class APIError(Exception):
         error = self.response.json
         return 'httpCode: %s errorCode: %s message: %s' % (error['httpCode'], error['errorCode'], error['message'])
 
-
 class API:
 
-    def __init__(self, useData, accessRules = [],
+    def __init__(self, useData, accessRules=[], application=None, secret=None, consumerKey=None,
                  url='https://api.ovh.com/1.0'):
 
-        self.application = None
-        self.secret      = None
-        self.consumerKey = None
+        self.application = application 
+        self.secret      = secret
+        self.consumerKey = consumerKey
         self.accessRules = accessRules
         self.url         = url
 
@@ -44,23 +43,28 @@ class API:
         base = '/alkivi/.secureData/api_ovh/'
         file = base + useData
 
-        # Test file is ok
-        if(not(os.path.exists(file))):
-            Logger.instance().warning('Unable to fetch correct file. Check that %s exists and is readable' % (file))
-            raise
+        # Skip opening of a file
+        if(self.application):
+            if(not(self.consumerKey)):
+                Logger.instance().info('API application was passed, but not consumerKey, hopes its a call for request_CK ;)')
+        else:
+            if(not(os.path.exists(file))):
+                Logger.instance().warning('Unable to fetch correct file. Check that %s exists and is readable' % (file))
+                raise
+            else:
+                # Open file
+                f = open(file)
 
-        # Open file
-        f = open(file)
+                # Check syntax
+                rx = re.compile('^(.*?):(.*?):(.*?)$')
+                for line in f:
+                    m = rx.search(line)
+                    if(m):
+                        self.application, self.secret, self.consumerKey = m.groups()
 
-        # Check syntax
-        rx = re.compile('^(.*?):(.*?):(.*?)$')
-        for line in f:
-            m = rx.search(line)
-            if(m):
-                self.application, self.secret, self.consumerKey = m.groups()
 
-        # Check that we are good to go
-        if(not(self.application) or not(self.secret) or not(self.consumerKey)):
+        # Check that we are good to go, dont check consumerKey, we might just want to get credentials ...
+        if(not(self.application) or not(self.secret)):
             Logger.instance().warning('Did not find any file that contains correct data, bazinga')
             raise
         else:

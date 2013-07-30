@@ -27,7 +27,7 @@ print pp.pprint(accessRules)
 raw_input()
 
 from alkivi.api import ovh
-api = ovh.API(application, applicationSecret, accessRules = accessRules)
+api = ovh.API(useData='',application=application, secret=applicationSecret, accessRules=accessRules)
 
 # Will print validation URL and token
 api.request_CK()
