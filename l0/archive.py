@@ -33,12 +33,13 @@ class PCA(sql.Model,sql.Base):
 class Session(sql.Model,sql.Base):
     __tablename__ = 'sessions'
        
-    id        = Column(String(45), primary_key = True)
-    pca_id    = Column(Integer, index=True)
-    size      = Column(BIGINT)
-    state     = Column(String(20), index=True)
-    startDate = Column(DATETIME)
-    endDate   = Column(DATETIME)
+    id          = Column(String(45), primary_key = True)
+    pca_id      = Column(Integer, index=True)
+    size        = Column(BIGINT)
+    ovh_state   = Column(String(20), index=True)
+    local_state = Column(String(20), index=True)
+    startDate   = Column(DATETIME)
+    endDate     = Column(DATETIME)
 
     # Linked objects
 
@@ -52,35 +53,44 @@ class Session(sql.Model,sql.Base):
         return "<Session(id='%s',size='%i', state='%s')>" % (self.id, self.size, self.state)
 
     def syncWithRemote(self, remote):
-        if(self.state == 'done' or self.state == 'synced'):
+        if(self.local_state == 'synced' and self.ovh_state == remote['state']):
             return self
         else:
             changes=False
-            for attr in ['size', 'state']:
-                if(getattr(self,attr) != remote[attr]):
-                    setattr(self, attr, remote[attr])
+            dict = { 'size': 'size', 'ovh_state': 'state' }
+            for local_attr, remote_attr in dict.iteritems(): 
+                if(getattr(self,local_attr) != remote[remote_attr]):
+                    setattr(self, local_attr, remote[remote_attr])
                     changes=True
 
-            # Special data for date
+            # Special data for date 
+            # TODO : use hash as well ?
             from dateutil.parser import parse
             for attr in ['startDate', 'endDate']:
                 date = parse(remote[attr], fuzzy=True)
-                setattr(self, attr, date.strftime("%Y-%m-%d %H:%M:%S"))
+                newDate = date.strftime("%Y-%m-%d %H:%M:%S")
+                if(getattr(self,attr) != newDate):
+                    setattr(self, attr, newDate)
+                    changes=True
 
+            # Well well
             if(changes):
                 self.update()
+
+            # Test is made with all file inside ...
             return self
 
 
 class File(sql.Model, sql.Base):
     __tablename__ = 'files'
        
-    id         = Column(String(45), primary_key = True)
-    session_id = Column(String(45), index=True)
-    name       = Column(String(255), index=True)
-    type       = Column(String(50), index=True)
-    size       = Column(BIGINT)
-    state      = Column(String(20), index=True)
+    id          = Column(String(45), primary_key = True)
+    session_id  = Column(String(45), index=True)
+    name        = Column(String(255), index=True)
+    type        = Column(String(50), index=True)
+    size        = Column(BIGINT)
+    ovh_state   = Column(String(20), index=True)
+    local_state = Column(String(20), index=True)
 
     # Linked objects
 
@@ -94,14 +104,31 @@ class File(sql.Model, sql.Base):
         return "<PCA('%s','%s', '%s')>" % (self.serviceName, self.pcaServiceName)
 
     def syncWithRemote(self, remote):
-        if(self.state == 'done'):
-            return True
+        # Do we have an update from remote ?
+        if(self.ovh_state == remote['state']):
+            return self.ovh_state == 'done'
         else:
             changes=False
-            for attr in ['name', 'type', 'size', 'state']:
-                if(getattr(self,attr) != remote[attr]):
-                    setattr(self, attr, remote[attr])
+            # Use a dict to be able to map different key names
+            dict = { 'name': 'name', 
+                     'type': 'type',
+                     'size': 'size',
+                     'ovh_state': 'state',
+                    }
+
+            for local_attr, remote_attr in dict.iteritems(): 
+                if(getattr(self,local_attr) != remote[remote_attr]):
+                    setattr(self, local_attr, remote[remote_attr])
                     changes=True
+
+            # At this point, we are synced
+            if(self.local_state != 'synced'):
+                self.local_state = 'synced'
+                changes = True
+
+            # Well well
             if(changes):
                 self.update()
-            return self.state == 'done'
+
+            # Return true is remote state is done
+            return self.ovh_state == 'done'
