@@ -4,6 +4,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import sessionmaker
 import datetime
+import os
+import re
 
 from alkivi.common import Singleton
 from alkivi.common import logger
@@ -47,7 +49,11 @@ class Db(object):
                 self.url = 'mysql://%s:%s@%s/%s?charset=%s' % (user, password, host, db, charset)
 
 
-        self.engine = create_engine(url, echo=echo)
+        if(not(self.url)):
+            Logger.instance().warning('No url, wtf ?', self)
+            raise
+
+        self.engine = create_engine(self.url, echo=echo)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
  
