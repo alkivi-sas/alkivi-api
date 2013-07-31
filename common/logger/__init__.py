@@ -368,3 +368,28 @@ class LoggerIteration():
             self.emailHandler.flush()
 
 
+#
+# Define global function that can be use using logger.log directly in code :)
+def debug_debug(message, *args, **kws):
+    Logger.instance().debug_debug(message, *args, **kws)
+
+def debug(message, *args, **kws):
+    Logger.instance().debug(message, *args, **kws)
+
+def log(message, *args, **kws):
+    Logger.instance().log(message, *args, **kws)
+
+def info(message, *args, **kws):
+    Logger.instance().info(message, *args, **kws)
+
+def important(message, *args, **kws):
+    Logger.instance().important(message, *args, **kws)
+
+def warning(message, *args, **kws):
+    Logger.instance().warning(message, *args, **kws)
+
+def error(message, *args, **kws):
+    Logger.instance().error(message, *args, **kws)
+
+def critical(message, *args, **kws):
+    Logger.instance().critical(message, *args, **kws)

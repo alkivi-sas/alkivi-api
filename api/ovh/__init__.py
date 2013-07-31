@@ -14,7 +14,6 @@ sys.setdefaultencoding("utf-8")
 sys.path.append('/')
 
 from alkivi.common import logger
-from alkivi.common.logger import Logger
 
 # Custom debug for API low level
 DEBUG = False
@@ -46,10 +45,10 @@ class API:
         # Skip opening of a file
         if(self.application):
             if(not(self.consumerKey)):
-                Logger.instance().info('API application was passed, but not consumerKey, hopes its a call for request_CK ;)')
+                logger.info('API application was passed, but not consumerKey, hopes its a call for request_CK ;)')
         else:
             if(not(os.path.exists(file))):
-                Logger.instance().warning('Unable to fetch correct file. Check that %s exists and is readable' % (file))
+                logger.warning('Unable to fetch correct file. Check that %s exists and is readable' % (file))
                 raise
             else:
                 # Open file
@@ -65,7 +64,7 @@ class API:
 
         # Check that we are good to go, dont check consumerKey, we might just want to get credentials ...
         if(not(self.application) or not(self.secret)):
-            Logger.instance().warning('Did not find any file that contains correct data, bazinga')
+            logger.warning('Did not find any file that contains correct data, bazinga')
             raise
         else:
             self.drift       = self.get_drift()
@@ -80,25 +79,25 @@ class API:
             path = path + '?' + '&'.join(extra)
 
         if(DEBUG):
-            Logger.instance().debug("[API OVH] Going to %s on %s" % ('get', path))
+            logger.debug("[API OVH] Going to %s on %s" % ('get', path))
             
         return self._ovh_req(path, "GET", self.consumerKey)
     
     def post(self, path, params):
         if(DEBUG):
-            Logger.instance().debug("[API OVH] Going to %s on %s with params : " % ('post', 'path'), params)
+            logger.debug("[API OVH] Going to %s on %s with params : " % ('post', 'path'), params)
 
         return self._ovh_req(path, "POST", self.consumerKey, params)
 
     def delete(self, path):
         if(DEBUG):
-            Logger.instance().debug("Going to %s on %s" % ('delete', path))
+            logger.debug("Going to %s on %s" % ('delete', path))
 
         return self._ovh_req(path, "DELETE", self.consumerKey)
 
     def put(self, path, params):
         if(DEBUG):
-            Logger.instance().debug("[API OVH] Going to %s on %s" % ('put', path))
+            logger.debug("[API OVH] Going to %s on %s" % ('put', path))
 
         return self._ovh_req(path, "PUT", self.consumerKey, params)
 

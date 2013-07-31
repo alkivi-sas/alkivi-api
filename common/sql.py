@@ -9,7 +9,6 @@ import re
 
 from alkivi.common import Singleton
 from alkivi.common import logger
-from alkivi.common.logger import Logger
  
 Base = declarative_base()
  
@@ -34,7 +33,7 @@ class Db(object):
 
         # Test file is ok
         if(not(os.path.exists(file))):
-            Logger.instance().warning('Unable to fetch correct file. Check that %s exists and is readable' % (file))
+            logger.warning('Unable to fetch correct file. Check that %s exists and is readable' % (file))
             raise
 
         # Open file
@@ -50,7 +49,7 @@ class Db(object):
 
 
         if(not(self.url)):
-            Logger.instance().warning('No url, wtf ?', self)
+            logger.warning('No url, wtf ?', self)
             raise
 
         self.engine = create_engine(self.url, echo=echo)
@@ -107,9 +106,9 @@ class Model():
     def newFromCharacteristics(self, *args, **kwargs):
         db = Db.instance()
         query = self.queryObject()
-        #logger.Logger.instance().debug("newFromCharacteristicsOrCreate")
+        #logger.debug("newFromCharacteristicsOrCreate")
         for attr, value in kwargs.items():
-            #logger.Logger.instance().debug("Going to append filter %s=%s" % (attr, value))
+            #logger.debug("Going to append filter %s=%s" % (attr, value))
             query = query.filter(getattr(self.__class__, attr)==value)
         return query.one()
 
