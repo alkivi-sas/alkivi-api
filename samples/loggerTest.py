@@ -11,7 +11,7 @@ from alkivi.common.logger import Logger
 #
 # Define Logger
 #
-logger = Logger.instance(
+logger.Logger.instance(
         min_log_level_to_mail  = logger.ERROR,
         min_log_level_to_save  = logger.DEBUG_DEBUG,
         min_log_level_to_print = logger.DEBUG,

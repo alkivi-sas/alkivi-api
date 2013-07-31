@@ -369,7 +369,8 @@ class LoggerIteration():
 
 
 #
-# Define global function that can be use using logger.log directly in code :)
+# Define global functions that can be use using logger.log directly in code :)
+#
 def debug_debug(message, *args, **kws):
     Logger.instance().debug_debug(message, *args, **kws)
 
@@ -393,3 +394,14 @@ def error(message, *args, **kws):
 
 def critical(message, *args, **kws):
     Logger.instance().critical(message, *args, **kws)
+
+def newLoopLogger():
+    Logger.instance().newLoopLogger()
+
+def delLoopLogger():
+    Logger.instance().delLoopLogger()
+
+def newIteration(*args, **kws):
+    Logger.instance().newIteration(*args, **kws)
+
+
