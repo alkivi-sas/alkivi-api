@@ -304,7 +304,7 @@ class LoggerIteration():
         self.setHandlers()
 
         # Set logger handlers
-        self.setLogger()
+        self.enable()
 
     """
         Only one function to log, called by Logger
@@ -340,9 +340,13 @@ class LoggerIteration():
         for handler in self.handlers:
             handler.setFormatter(self.getFormatter())
 
-    def setLogger(self):
+    def enable(self):
         for handler in self.handlers:
             self.logger.addHandler(handler)
+
+    def disable(self):
+        for handler in self.handlers:
+            self.logger.removeHandler(handler)
 
     def addPrefix(self, prefix):
         self.prefixes.append(prefix)
@@ -357,21 +361,6 @@ class LoggerIteration():
 
         self.setFormatter()
         self.setHandlers()
-
-    """
-        Enable disable handler on the go
-    """
-    def disable(self):
-        for handler in self.handlers:
-            handler.setLevel(200) # Ugly but efficient
-
-    def enable(self):
-        if(self.consoleHandler):
-            self.consoleHandler.setLevel(self.min_log_level_to_print)
-        if(self.fileHandler):
-            self.fileHandler.setLevel(self.min_log_level_to_save)
-        if(self.emailHandler):
-            self.emailHandler.setLevel(NOTSET)
 
     def flush(self):
         # Flush all buffer ? just email ?
