@@ -69,6 +69,7 @@ class Lock:
             # Delete file
             if os.path.isfile(self.lockFile):
                 os.unlink(self.lockFile)
+                logger.debug("Lockfile %s released" % (self.lockFile))
 
         except Exception as e:
             logger.warning("Error during __del__ of lock", e)

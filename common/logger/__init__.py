@@ -6,6 +6,7 @@ import logging
 import logging.handlers
 import sys
 import os
+import pwd
 import socket
 import pprint
 
@@ -34,7 +35,8 @@ logging.addLevelName(IMPORTANT, "IMPORTANT")
 source    = sys.argv[0]
 sourceDir = os.path.realpath(source)
 pid       = os.getpid()
-user      = os.getlogin()
+#user      = os.getlogin()
+user      = pwd.getpwuid(os.getuid()).pw_name
 host      = socket.gethostname()
 
 
