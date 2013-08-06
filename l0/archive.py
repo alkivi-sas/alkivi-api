@@ -1,6 +1,7 @@
 #TODO : dive in postgre ? :)
 from alkivi.common import sql
-from sqlalchemy import Column, Date, Integer, String, Index
+from sqlalchemy import Column, Date, Integer, String, Index, ForeignKey
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.dialects.mysql import DATETIME, BIGINT
 
@@ -13,7 +14,11 @@ class Db():
 
 class PCA(sql.Model,sql.Base):
     __tablename__ = 'pca'
-       
+
+    # Need to instanciate db (singleton) 
+    Db()
+
+
     # Table Scheme
     id             = Column(Integer, primary_key = True)
     serviceName    = Column(String(30))
@@ -22,10 +27,11 @@ class PCA(sql.Model,sql.Base):
 
     # Indexes
     indexes = []
-    indexes.append(Index('unique_pca', serviceName, pcaServiceName, unique=True))
+    indexes.append(Index('idx_unique_pca', serviceName, pcaServiceName, unique=True))
     
 
-    # Linked objects
+    # Relationship
+    sessions = relationship("Session", backref="pca")
 
 
     # Database configuration
@@ -42,24 +48,30 @@ class PCA(sql.Model,sql.Base):
 
 class Session(sql.Model,sql.Base):
     __tablename__ = 'sessions'
-       
+
+    # Need to instanciate db (singleton) 
+    Db()
+
+
     # Table Scheme
     id          = Column(String(45), primary_key = True)
-    pca_id      = Column(Integer)
+    pca_id      = Column(Integer, ForeignKey('pca.id'))
     size        = Column(BIGINT)
     ovh_state   = Column(String(20))
     local_state = Column(String(20))
     startDate   = Column(DATETIME)
     endDate     = Column(DATETIME)
 
+
     # Indexes
     indexes = []
-    indexes.append(Index('pca_id'      , pca_id))
-    indexes.append(Index('ovh_state'   , ovh_state))
-    indexes.append(Index('local_state' , local_state))
+    indexes.append(Index('idx_pca_id'      , pca_id))
+    indexes.append(Index('idx_ovh_state'   , ovh_state))
+    indexes.append(Index('idx_local_state' , local_state))
 
 
-    # Linked objects
+    # Relationship
+    files = relationship("File", backref="sessions")
 
 
     # Database configuration
@@ -72,7 +84,7 @@ class Session(sql.Model,sql.Base):
        
     # Functions
     def __repr__(self):
-        return "<Session(id='%s',size='%i', state='%s')>" % (self.id, self.size, self.state)
+        return "<Session(id=%s, size=%i, ovh=%s, local=%s)>" % (self.id, self.size, self.ovh_state, self.local_state)
 
     def syncWithRemote(self, remote):
         if(self.local_state == 'synced' and self.ovh_state == remote['state']):
@@ -105,9 +117,13 @@ class Session(sql.Model,sql.Base):
 
 class File(sql.Model, sql.Base):
     __tablename__ = 'files'
-       
+
+    # Need to instanciate db (singleton) 
+    Db()
+
+    # Table Scheme
     id          = Column(String(45), primary_key = True)
-    session_id  = Column(String(45))
+    session_id  = Column(String(45), ForeignKey('sessions.id'))
     name        = Column(String(255))
     fileName    = Column(String(60))
     type        = Column(String(50))
@@ -121,18 +137,18 @@ class File(sql.Model, sql.Base):
 
     # Indexes
     indexes = []
-    indexes.append(Index('session_id'  , session_id))
-    indexes.append(Index('name'        , name))
-    indexes.append(Index('fileName'    , fileName))
-    indexes.append(Index('type'        , type))
-    indexes.append(Index('sha1'        , sha1         , mysql_length=10))
-    indexes.append(Index('sha256'      , sha256       , mysql_length=16))
-    indexes.append(Index('md5'         , sha256       , mysql_length=8))
-    indexes.append(Index('ovh_state'   , ovh_state))
-    indexes.append(Index('local_state' , local_state))
+    indexes.append(Index('idx_session_id'  , session_id))
+    indexes.append(Index('idx_name'        , name))
+    indexes.append(Index('idx_fileName'    , fileName))
+    indexes.append(Index('idx_type'        , type))
+    indexes.append(Index('idx_sha1'        , sha1         , mysql_length=10))
+    indexes.append(Index('idx_sha256'      , sha256       , mysql_length=16))
+    indexes.append(Index('idx_md5'         , sha256       , mysql_length=8))
+    indexes.append(Index('idx_ovh_state'   , ovh_state))
+    indexes.append(Index('idx_local_state' , local_state))
 
 
-    # Linked objects
+    # Relationship
 
 
     # Database configuration

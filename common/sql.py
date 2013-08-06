@@ -56,7 +56,10 @@ class Db(object):
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
  
-        ## Create all Tables
+        # Bind engine
+        Base.metadata.bind = self.engine
+
+        # Create all Tables
         Base.metadata.create_all(self.engine)
  
     def instance(self, *args, **kwargs): 
@@ -72,7 +75,10 @@ class Model():
     '''
     This is a baseclass with delivers all basic database operations
     '''
- 
+    def __init__(self, *args, **kwargs):
+        if('fixed_characteristics' in kwargs):
+            self.fixed_characteristics = kwargs['fixed_characteristics']
+
     def save(self):
         db = Db.instance()
         db.session.add(self)
@@ -100,6 +106,21 @@ class Model():
         db = Db.instance()
         query = self.queryObject()
         characteristics = kwargs.get('characteristics')
+
+        try:
+            getattr(self, 'fixed_characteristics')
+            if(not(characteristics)):
+                kwargs['characteristics'] = self.fixed_characteristics
+            else:
+                for key, value in self.fixed_characteristics.items():
+                    if((key in characteristics) and (characteristics[key] != value)):
+                        logger.warning('You are trying to fetch a customer with wrong characteristics, going to fix %s to %s' % (key, value))
+
+                    characteristics[key] = value
+
+        except AttributeError:
+            pass
+
         # Todo empty ?
         if(characteristics):
             for attr, value in characteristics.items():
