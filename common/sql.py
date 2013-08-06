@@ -99,16 +99,31 @@ class Model():
     def newListFromCharacteristics(self, *args, **kwargs):
         db = Db.instance()
         query = self.queryObject()
-        for attr, value in kwargs.items():
-            query = query.filter(getattr(self.__class__, attr)==value)
+        characteristics = kwargs.get('characteristics')
+        # Todo empty ?
+        if(characteristics):
+            for attr, value in characteristics.items():
+                # We have potentially other filter
+                if(isinstance(value, dict)):
+                    operator = value['operator']
+                    fvalue   = value['value']
+                    logger.debug_debug("Going to append filter %s and operator %s=%s" % (attr, operator, fvalue))
+                    query = query.filter(getattr(self.__class__, attr).like(fvalue))
+
+
+                else:
+                    logger.debug_debug("Going to append filter %s=%s" % (attr, value))
+                    query = query.filter(getattr(self.__class__, attr)==value)
         return query.all()
 
     def newFromCharacteristics(self, *args, **kwargs):
         db = Db.instance()
         query = self.queryObject()
         #logger.debug("newFromCharacteristicsOrCreate")
-        for attr, value in kwargs.items():
-            #logger.debug("Going to append filter %s=%s" % (attr, value))
+        characteristics = kwargs.get('characteristics')
+        # TODO : throw errors if no characteristics
+        for attr, value in characteristics.items():
+            logger.debug_debug("Going to append filter %s=%s" % (attr, value))
             query = query.filter(getattr(self.__class__, attr)==value)
         return query.one()
 
@@ -118,7 +133,9 @@ class Model():
             result = self.newFromCharacteristics(*args, **kwargs)
         except NoResultFound as e:
             result = self.__class__()
-            for attr, value in kwargs.items():
+            characteristics = kwargs.get('characteristics')
+            # TODO : throw errors if no characteristics ?
+            for attr, value in characteristics.items():
                 setattr(result, attr, value)
             result.save()
         except:
@@ -127,5 +144,8 @@ class Model():
         return result
 
 
+    # TODO : make this better according to type ?
+    def as_dict(self):
+           return {c.name: str(getattr(self, c.name)) for c in self.__table__.columns}
 
 

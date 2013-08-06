@@ -1,6 +1,7 @@
 #TODO : dive in postgre ? :)
 from alkivi.common import sql
 from sqlalchemy import Column, Date, Integer, String, Index
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.dialects.mysql import DATETIME, BIGINT
 
 class Db():
@@ -13,17 +14,26 @@ class Db():
 class PCA(sql.Model,sql.Base):
     __tablename__ = 'pca'
        
-    # Default column with index
+    # Table Scheme
     id             = Column(Integer, primary_key = True)
     serviceName    = Column(String(30))
     pcaServiceName = Column(String(30))
 
 
+    # Indexes
+    indexes = []
+    indexes.append(Index('unique_pca', serviceName, pcaServiceName, unique=True))
+    
+
     # Linked objects
 
 
     # Database configuration
-    __table_args__ = (Index('unique_pca', serviceName, pcaServiceName, unique=True), {'mysql_engine':'InnoDB', 'mysql_charset':'utf8'} )
+    @declared_attr
+    def __table_args__(cls):
+        __table_args__ = cls.indexes
+        __table_args__.append({'mysql_engine':'InnoDB', 'mysql_charset':'utf8'})
+        return tuple(__table_args__)
 
 
     # Functions
@@ -33,19 +43,31 @@ class PCA(sql.Model,sql.Base):
 class Session(sql.Model,sql.Base):
     __tablename__ = 'sessions'
        
+    # Table Scheme
     id          = Column(String(45), primary_key = True)
-    pca_id      = Column(Integer, index=True)
+    pca_id      = Column(Integer)
     size        = Column(BIGINT)
-    ovh_state   = Column(String(20), index=True)
-    local_state = Column(String(20), index=True)
+    ovh_state   = Column(String(20))
+    local_state = Column(String(20))
     startDate   = Column(DATETIME)
     endDate     = Column(DATETIME)
+
+    # Indexes
+    indexes = []
+    indexes.append(Index('pca_id'      , pca_id))
+    indexes.append(Index('ovh_state'   , ovh_state))
+    indexes.append(Index('local_state' , local_state))
+
 
     # Linked objects
 
 
     # Database configuration
-    __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset':'utf8'}
+    @declared_attr
+    def __table_args__(cls):
+        __table_args__ = cls.indexes
+        __table_args__.append({'mysql_engine':'InnoDB', 'mysql_charset':'utf8'})
+        return tuple(__table_args__)
 
        
     # Functions
@@ -85,18 +107,40 @@ class File(sql.Model, sql.Base):
     __tablename__ = 'files'
        
     id          = Column(String(45), primary_key = True)
-    session_id  = Column(String(45), index=True)
-    name        = Column(String(255), index=True)
-    type        = Column(String(50), index=True)
+    session_id  = Column(String(45))
+    name        = Column(String(255))
+    fileName    = Column(String(60))
+    type        = Column(String(50))
     size        = Column(BIGINT)
-    ovh_state   = Column(String(20), index=True)
-    local_state = Column(String(20), index=True)
+    sha1        = Column(String(40))
+    sha256      = Column(String(64))
+    md5         = Column(String(32))
+    ovh_state   = Column(String(20))
+    local_state = Column(String(20))
+
+
+    # Indexes
+    indexes = []
+    indexes.append(Index('session_id'  , session_id))
+    indexes.append(Index('name'        , name))
+    indexes.append(Index('fileName'    , fileName))
+    indexes.append(Index('type'        , type))
+    indexes.append(Index('sha1'        , sha1         , mysql_length=10))
+    indexes.append(Index('sha256'      , sha256       , mysql_length=16))
+    indexes.append(Index('md5'         , sha256       , mysql_length=8))
+    indexes.append(Index('ovh_state'   , ovh_state))
+    indexes.append(Index('local_state' , local_state))
+
 
     # Linked objects
 
 
     # Database configuration
-    __table_args__ = {'mysql_engine':'InnoDB','mysql_charset':'utf8'}
+    @declared_attr
+    def __table_args__(cls):
+        __table_args__ = cls.indexes
+        __table_args__.append({'mysql_engine':'InnoDB', 'mysql_charset':'utf8'})
+        return tuple(__table_args__)
 
        
     # Functions
@@ -110,14 +154,22 @@ class File(sql.Model, sql.Base):
         else:
             changes=False
             # Use a dict to be able to map different key names
-            dict = { 'name': 'name', 
-                     'type': 'type',
-                     'size': 'size',
-                     'ovh_state': 'state',
+            dict = { 
+                    'name'      : 'name',
+                    'type'      : 'type',
+                    'size'      : 'size',
+                    'sha1'      : 'SHA1',
+                    'sha256'    : 'SHA256',
+                    'md5'       : 'MD5',
+                    'ovh_state' : 'state',
                     }
 
             for local_attr, remote_attr in dict.iteritems(): 
                 if(getattr(self,local_attr) != remote[remote_attr]):
+                    # Fix fileName by splitting path
+                    if(local_attr=='name'):
+                        self.fileName = remote[remote_attr].split('/')[-1]
+
                     setattr(self, local_attr, remote[remote_attr])
                     changes=True
 
