@@ -196,6 +196,9 @@ class Logger():
     def critical(self, message, *args, **kws):
         self._log(CRITICAL, message, *args, **kws)
 
+    def exception(self, message, *args, **kws):
+        self.currentLogger.exception(message, *args, **kws)
+
 
     """
         Handles creation of secondary logger, used in loops
@@ -314,6 +317,9 @@ class LoggerIteration():
     def _log(self, priority, message, *args, **kws):
         self.logger._log(priority, message, (), **kws)
 
+    def exception(self, message, *args, **kws):
+        self.logger.exception(message, *args, **kws)
+
 
     """
         Generate formatters according to prefixes
@@ -393,6 +399,9 @@ def warning(message, *args, **kws):
 
 def error(message, *args, **kws):
     Logger.instance().error(message, *args, **kws)
+
+def exception(message, *args, **kws):
+    Logger.instance().exception(message, *args, **kws)
 
 def critical(message, *args, **kws):
     Logger.instance().critical(message, *args, **kws)
