@@ -10,8 +10,6 @@ import re
 from alkivi.common import Singleton
 from alkivi.common import logger
  
-Base = declarative_base()
- 
  
 @Singleton
 class Db(object):
@@ -56,11 +54,6 @@ class Db(object):
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
  
-        # Bind engine
-        Base.metadata.bind = self.engine
-
-        # Create all Tables
-        Base.metadata.create_all(self.engine)
  
     def instance(self, *args, **kwargs): 
  

@@ -2,8 +2,10 @@
 from alkivi.common import sql
 from sqlalchemy import Column, Date, Integer, String, Index, ForeignKey
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from sqlalchemy.dialects.mysql import DATETIME, BIGINT
+
+Base = declarative_base()
 
 class Db():
     instance = None
@@ -11,8 +13,9 @@ class Db():
     def __init__(self, echo=False):
         # Will fetch credentials in a secureData file ... check /alkivi/common/sql.py
         self = sql.Db.instance(useData='archive', echo=echo)
+        Base.metadata.create_all(self.engine)
 
-class PCA(sql.Model,sql.Base):
+class PCA(sql.Model,Base):
     __tablename__ = 'pca'
 
     # Need to instanciate db (singleton) 
@@ -46,7 +49,7 @@ class PCA(sql.Model,sql.Base):
     def __repr__(self):
         return "<PCA('%s','%s')>" % (self.serviceName, self.pcaServiceName)
 
-class Session(sql.Model,sql.Base):
+class Session(sql.Model,Base):
     __tablename__ = 'sessions'
 
     # Need to instanciate db (singleton) 
@@ -115,7 +118,7 @@ class Session(sql.Model,sql.Base):
             return self
 
 
-class File(sql.Model, sql.Base):
+class File(sql.Model, Base):
     __tablename__ = 'files'
 
     # Need to instanciate db (singleton) 
