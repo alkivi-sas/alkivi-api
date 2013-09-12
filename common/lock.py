@@ -18,7 +18,8 @@ class Lock:
         self.fullPath   = os.path.realpath(sys.argv[0])
         self.scriptName = self.fullPath.split('/')[-1]
         self.pid        = os.getpid()
-        self.user       = os.getlogin()
+        #self.user       = os.getlogin()    #crash in cgi and cron
+        self.user       = pwd.getpwuid(os.getuid()).pw_name
         self.startTime  = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         # Remove weird caracters
