@@ -1,5 +1,6 @@
 from alkivi.common import logger
 import os
+import pwd
 import tempfile
 
 class Lock:
