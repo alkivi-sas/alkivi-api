@@ -187,11 +187,17 @@ class Logger():
     def important(self, message, *args, **kws):
         self._log(IMPORTANT, message, *args, **kws)
 
+    def warn(self, message, *args, **kws):
+        self._log(WARNING, message, *args, **kws)
+
     def warning(self, message, *args, **kws):
         self._log(WARNING, message, *args, **kws)
 
     def error(self, message, *args, **kws):
         self._log(ERROR, message, *args, **kws)
+
+    def fatal(self, message, *args, **kws):
+        self._log(CRITICAL, message, *args, **kws)
 
     def critical(self, message, *args, **kws):
         self._log(CRITICAL, message, *args, **kws)
@@ -394,6 +400,9 @@ def info(message, *args, **kws):
 def important(message, *args, **kws):
     Logger.instance().important(message, *args, **kws)
 
+def warn(message, *args, **kws):
+    Logger.instance().warning(message, *args, **kws)
+
 def warning(message, *args, **kws):
     Logger.instance().warning(message, *args, **kws)
 
@@ -402,6 +411,9 @@ def error(message, *args, **kws):
 
 def exception(message, *args, **kws):
     Logger.instance().exception(message, *args, **kws)
+
+def fatal(message, *args, **kws):
+    Logger.instance().critical(message, *args, **kws)
 
 def critical(message, *args, **kws):
     Logger.instance().critical(message, *args, **kws)
