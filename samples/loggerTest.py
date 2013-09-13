@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*-coding:utf-8 -*
 
 import sys
 reload(sys)
@@ -12,9 +13,10 @@ from alkivi.common.logger import Logger
 # Define Logger
 #
 logger.Logger.instance(
-        min_log_level_to_mail  = logger.ERROR,
-        min_log_level_to_save  = logger.DEBUG_DEBUG,
-        min_log_level_to_print = logger.DEBUG,
+        min_log_level_to_mail   = logger.ERROR,
+        min_log_level_to_save   = logger.DEBUG_DEBUG,
+        min_log_level_to_print  = logger.DEBUG,
+        min_log_level_to_syslog = None,
         emails=['anthony@alkivi.fr'])
 
 #
