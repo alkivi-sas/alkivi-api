@@ -129,22 +129,24 @@ class Logger():
         check /alkivi/samples/testLogger.py for more informations
     """
     def __init__(self, 
-            min_log_level_to_print = INFO,
-            min_log_level_to_mail  = WARNING,
-            min_log_level_to_save  = INFO,
-            filename               = source + '.log',
-            emails                 = [],
-            prefix                 = None,
+            min_log_level_to_print  = INFO,
+            min_log_level_to_mail   = WARNING,
+            min_log_level_to_save   = INFO,
+            min_log_level_to_syslog = WARNING,
+            filename                = source + '.log',
+            emails                  = [],
+            prefix                  = None,
             ):
 
 
-        self.subject                = "%s_%i" % (source, pid)
-        self.min_log_level_to_print = min_log_level_to_print
-        self.min_log_level_to_save  = min_log_level_to_save
-        self.min_log_level_to_mail  = min_log_level_to_mail
-        self.filename               = filename
-        self.emails                 = emails
-        self.prefix                 = prefix
+        self.subject                  = "%s_%i" % (source, pid)
+        self.min_log_level_to_print   = min_log_level_to_print
+        self.min_log_level_to_save    = min_log_level_to_save
+        self.min_log_level_to_mail    = min_log_level_to_mail
+        self.min_log_level_to_syslog  = min_log_level_to_syslog
+        self.filename                 = filename
+        self.emails                   = emails
+        self.prefix                   = prefix
         
 
         self.currentLogger = None
@@ -212,13 +214,14 @@ class Logger():
     def newLoopLogger(self):
         # Do we have already a logger ?
         newLogger = LoggerIteration(
-                subject                = "%s_%i" % (self.subject, len(self.loggers)),
-                min_log_level_to_print = self.min_log_level_to_print,
-                min_log_level_to_save  = self.min_log_level_to_save,
-                min_log_level_to_mail  = self.min_log_level_to_mail,
-                filename               = self.filename,
-                emails                 = self.emails,
-                currentLogger          = self.currentLogger
+                subject                  = "%s_%i" % (self.subject, len(self.loggers)),
+                min_log_level_to_print   = self.min_log_level_to_print,
+                min_log_level_to_save    = self.min_log_level_to_save,
+                min_log_level_to_mail    = self.min_log_level_to_mail,
+                min_log_level_to_syslog  = self.min_log_level_to_syslog,
+                filename                 = self.filename,
+                emails                   = self.emails,
+                currentLogger            = self.currentLogger
                 )
 
 
@@ -250,13 +253,14 @@ class LoggerIteration():
 
 
     def __init__(self, 
-            subject                = source,
-            min_log_level_to_print = INFO,
-            min_log_level_to_mail  = WARNING,
-            min_log_level_to_save  = INFO,
-            filename               = source + '.log',
-            emails                 = [],
-            currentLogger          = None,
+            subject                 = source,
+            min_log_level_to_print  = INFO,
+            min_log_level_to_mail   = WARNING,
+            min_log_level_to_save   = INFO,
+            min_log_level_to_syslog = INFO,
+            filename                = source + '.log',
+            emails                  = [],
+            currentLogger           = None,
             ):
 
         # Create logger
@@ -264,15 +268,16 @@ class LoggerIteration():
         self.logger.setLevel(NOTSET)
 
         # Empty handler by default
-        self.handlers               = []
-        self.bufferHandler          = None
-        self.consoleHandler         = None
-        self.fileHandler            = None
-        self.emailHandler           = None
-        self.syslogHandler          = None
-        self.min_log_level_to_print = min_log_level_to_print
-        self.min_log_level_to_save  = min_log_level_to_save
-        self.min_log_level_to_mail  = min_log_level_to_mail
+        self.handlers                 = []
+        self.bufferHandler            = None
+        self.consoleHandler           = None
+        self.fileHandler              = None
+        self.emailHandler             = None
+        self.syslogHandler            = None
+        self.min_log_level_to_print   = min_log_level_to_print
+        self.min_log_level_to_save    = min_log_level_to_save
+        self.min_log_level_to_mail    = min_log_level_to_mail
+        self.min_log_level_to_syslog  = min_log_level_to_syslog
 
         # Define prefixes : add old logger prefix if present
         if(currentLogger != None):
@@ -290,11 +295,12 @@ class LoggerIteration():
             self.consoleHandler.setLevel(self.min_log_level_to_print)
             self.handlers.append(self.consoleHandler)
 
+        if(self.min_log_level_to_syslog != None):
             # Syslog handler :)
             #self.syslogHandler = logging.handlers.SysLogHandler(address = ('127.0.0.1',10514), facility=logging.handlers.SysLogHandler.LOG_SYSLOG, socktype=socket.SOCK_STREAM)
-            #self.syslogHandler.setLevel(min_log_level_to_print)
-            #self.syslogHandler.setFormatter(self.formatter)
-            #self.logger.addHandler(self.syslogHandler)
+            self.syslogHandler = logging.handlers.SysLogHandler(address = '/dev/log')
+            self.syslogHandler.setLevel(min_log_level_to_syslog)
+            self.handlers.append(self.syslogHandler)
 
         if(self.min_log_level_to_save != None):
             self.fileHandler = logging.handlers.TimedRotatingFileHandler(filename, when='midnight')
@@ -305,7 +311,6 @@ class LoggerIteration():
         if(self.min_log_level_to_mail != None and len(emails) > 0):
             self.emailHandler = AlkiviEmailHandler(mailhost='127.0.0.1', fromaddr="%s@%s" % (user, host), toaddrs=emails, level=self.min_log_level_to_mail)
             self.emailHandler.setLevel(NOTSET) # Needed, we want all log to go thought this
-
             self.handlers.append(self.emailHandler)
 
         # Create formatter
@@ -341,18 +346,26 @@ class LoggerIteration():
             if(prefix):
                 format += ' [%s]' % (prefix)
 
-        format = format + ' %(message)s'
-        self.formatter = logging.Formatter(format)
+        format       = format + ' %(message)s'
+        syslogFormat = '[%s] %s' % (source, format)
 
-    def getFormatter(self):
-        return self.formatter
+        self.formatter       = logging.Formatter(format)
+        self.syslogFormatter = logging.Formatter(syslogFormat)
+
+    def getFormatter(self, handler):
+        # Custom rules for syslog
+        if(handler.__class__.__name__ == 'SysLogHandler'):
+            return self.syslogFormatter
+        else:
+            return self.formatter
+
 
     """
         Tips to handle loggers ...
     """
     def setHandlers(self):
         for handler in self.handlers:
-            handler.setFormatter(self.getFormatter())
+            handler.setFormatter(self.getFormatter(handler))
 
     def enable(self):
         for handler in self.handlers:
