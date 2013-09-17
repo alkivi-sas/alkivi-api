@@ -278,7 +278,7 @@ class LoggerIteration():
             min_log_level_to_print  = INFO,
             min_log_level_to_mail   = WARNING,
             min_log_level_to_save   = INFO,
-            min_log_level_to_syslog = INFO,
+            min_log_level_to_syslog = WARNING,
             filename                = source + '.log',
             emails                  = [],
             currentLogger           = None,
@@ -346,7 +346,7 @@ class LoggerIteration():
     def setSyslogHandler(self):
         if(self.min_log_level_to_syslog != None):
             self.syslogHandler = logging.handlers.SysLogHandler(address = '/dev/log')
-            self.syslogHandler.setLevel(min_log_level_to_syslog)
+            self.syslogHandler.setLevel(self.min_log_level_to_syslog)
             self.handlers.append(self.syslogHandler)
 
     def deleteSyslogHandler(self):
