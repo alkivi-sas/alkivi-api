@@ -4,6 +4,7 @@ from sqlalchemy import Column, Date, Integer, String, Index, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from sqlalchemy.dialects.mysql import DATETIME, BIGINT
+from alkivi.common import logger
 
 Base = declarative_base()
 
@@ -87,7 +88,7 @@ class Session(sql.Model,Base):
        
     # Functions
     def __repr__(self):
-        return "<Session(id=%s, size=%i, ovh=%s, local=%s)>" % (self.id, self.size, self.ovh_state, self.local_state)
+        return "<Session(id=%s, ovh=%s, local=%s)>" % (self.id, self.ovh_state, self.local_state)
 
     def syncWithRemote(self, remote):
         if(self.local_state == 'synced' and self.ovh_state == remote['state']):
@@ -116,6 +117,12 @@ class Session(sql.Model,Base):
 
             # Test is made with all file inside ...
             return self
+
+    def deleteAllFiles(self):
+        filesToDelete = self.files
+        for file in filesToDelete:
+            logger.debug('Going to delete file %s' %(file))
+            file.delete()
 
 
 class File(sql.Model, Base):
@@ -164,7 +171,7 @@ class File(sql.Model, Base):
        
     # Functions
     def __repr__(self):
-        return "<PCA('%s','%s', '%s')>" % (self.serviceName, self.pcaServiceName)
+        return "<File('%s','%s', '%s')>" % (self.id, self.name, self.size)
 
     def syncWithRemote(self, remote):
         # Do we have an update from remote ?
