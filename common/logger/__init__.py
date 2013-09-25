@@ -431,20 +431,24 @@ class LoggerIteration():
     """
     def setFormatter(self):
         format = '[%(asctime)s] [%(levelname)-9s]'
+        syslog = '[%(levelname)-9s]'
 
         for prefix in self.basePrefixes:
             if(prefix):
                 format += ' [%s]' % (prefix)
+                syslog += ' [%s]' % (prefix)
 
         for prefix in self.prefixes:
             if(prefix):
                 format += ' [%s]' % (prefix)
+                syslog += ' [%s]' % (prefix)
 
-        format       = format + ' %(message)s'
-        syslogFormat = '[%s] %s' % (source, format)
+        format = format + ' %(message)s'
+        syslog = syslog + ' %(message)s'
+        syslog = '%s: %s' % (source, syslog)
 
         self.formatter       = logging.Formatter(format)
-        self.syslogFormatter = logging.Formatter(syslogFormat)
+        self.syslogFormatter = logging.Formatter(syslog)
 
     def getFormatter(self, handler):
         # Custom rules for syslog
