@@ -65,12 +65,10 @@ class AlkiviEmailHandler(logging.Handler):
         self.allbuffer.append(msg)
 
     def generateMail(self):
-        # Global header
-        msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (self.fromaddr, ','.join(self.toaddrs), self.buffer[0])
-
+        from email.mime.text import MIMEText
 
         # Script info
-        msg = msg + "\r\nScript info : \r\n"
+        msg = "Script info : \r\n"
         msg = msg + "%-9s: %s" % ('Script', source) + "\r\n"
         msg = msg + "%-9s: %s" % ('User', user) + "\r\n"
         msg = msg + "%-9s: %s" % ('Host', host) + "\r\n"
@@ -91,13 +89,20 @@ class AlkiviEmailHandler(logging.Handler):
         for name, value in os.environ.items():
              msg = msg + "%-10s = %s\r\n" % (name, value)
 
-        return msg
+        realMsg = MIMEText(msg, _charset='utf-8')
+
+        realMsg['Subject'] = self.buffer[0]
+        realMsg['To']      = ','.join(self.toaddrs)
+        realMsg['From']    = self.fromaddr
+
+        return realMsg
 
 
     def flush(self):
         if len(self.buffer) > 0:
             try:
                 import smtplib
+                from email.mime.text import MIMEText
                 port = self.mailport
                 if not port:
                     port = smtplib.SMTP_PORT
@@ -105,7 +110,7 @@ class AlkiviEmailHandler(logging.Handler):
                 smtp = smtplib.SMTP(self.mailhost, port)
                 msg = self.generateMail()
 
-                smtp.sendmail(self.fromaddr, self.toaddrs, msg)
+                smtp.sendmail(self.fromaddr, self.toaddrs, msg.__str__())
                 smtp.quit()
             except:
                 self.handleError(None)  # no particular record
