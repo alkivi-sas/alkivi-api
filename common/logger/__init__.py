@@ -249,6 +249,9 @@ class Logger():
         self.currentLogger.flush()
         self.currentLogger.setPrefix(*args, **kwargs)
 
+    def setPrefix(self, *args, **kwargs):
+        # Flush data (i.e send email if needed)
+        self.currentLogger.setPrefix(*args, **kwargs)
 
     # Helper to reset level after log creation
     def setMinLevelToSave(self, *args, **kwargs):
@@ -539,6 +542,9 @@ def newLoopLogger():
 
 def delLoopLogger():
     Logger.instance().delLoopLogger()
+
+def setPrefix(*args, **kws):
+    Logger.instance().setPrefix(*args, **kws)
 
 def newIteration(*args, **kws):
     Logger.instance().newIteration(*args, **kws)
