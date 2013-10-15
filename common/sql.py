@@ -95,6 +95,17 @@ class Model():
         db = Db.instance()
         return db.session.query(self.__class__)
 
+    # Create an object with characteristics, but dont commit it
+    def new(self, *args, **kwargs):
+        result = self.__class__()
+        characteristics = kwargs.get('characteristics')
+        # TODO : throw errors if no characteristics ?
+        for attr, value in characteristics.items():
+            setattr(result, attr, value)
+
+        return result
+
+    # Fetch a list of object having all the following characteristics
     def newListFromCharacteristics(self, *args, **kwargs):
         db = Db.instance()
         query = self.queryObject()
@@ -130,6 +141,10 @@ class Model():
                     query = query.filter(getattr(self.__class__, attr)==value)
         return query.all()
 
+
+
+
+    # Same as list but query.one() -> will raise an exception if multiple found
     def newFromCharacteristics(self, *args, **kwargs):
         db = Db.instance()
         query = self.queryObject()
@@ -141,16 +156,14 @@ class Model():
             query = query.filter(getattr(self.__class__, attr)==value)
         return query.one()
 
+
+    # First newFromCharacteristics if no one found, the new and commit
     def newFromCharacteristicsOrCreate(self, *args, **kwargs):
         from sqlalchemy.orm.exc import NoResultFound
         try:
             result = self.newFromCharacteristics(*args, **kwargs)
         except NoResultFound as e:
-            result = self.__class__()
-            characteristics = kwargs.get('characteristics')
-            # TODO : throw errors if no characteristics ?
-            for attr, value in characteristics.items():
-                setattr(result, attr, value)
+            result = self.new(*args, **kwargs)
             result.save()
         except:
             raise
