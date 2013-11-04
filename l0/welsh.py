@@ -53,6 +53,10 @@ class Restaurant(sql.Model,Base):
     comments = relationship("Comment", backref="restaurant")
 
 
+    # Extra function
+    
+
+
     # Database configuration
     @declared_attr
     def __table_args__(cls):
