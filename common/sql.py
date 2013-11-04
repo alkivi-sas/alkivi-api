@@ -38,12 +38,24 @@ class Db(object):
         f = open(file)
 
         # Check syntax
-        rx = re.compile('^(.*?):(.*?):(.*?):(.*?)$')
+        rx = re.compile('^(.*?):(.*?):(.*?):(.*?):(.*?):(.*?)$')
+        type,host,port,db,user,password = (None, None, None, None, None, None)
         for line in f:
             m = rx.search(line)
             if(m):
-                host,db,user,password = m.groups()
-                self.url = 'mysql://%s:%s@%s/%s?charset=%s' % (user, password, host, db, charset)
+                type,host,port,db,user,password = m.groups()
+
+        if(not(password)):
+            logger.warning('Password is not set, meaning that %s file is not correctly formatted, check it out' % file)
+            raise
+
+        if(type == 'mysql'):
+            self.url = '%s://%s:%s@%s:%s/%s?charset=%s' % (type, user, password, host, port, db, charset)
+        elif(type == 'postgres'):
+            self.url = '%s://%s:%s@%s:%s/%s' % (type, user, password, host, port, db )
+        else:
+            logger.warning('Unknow engin type %s' % type)
+            raise
 
 
         if(not(self.url)):
