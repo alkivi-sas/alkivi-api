@@ -76,5 +76,11 @@ class API:
     def write(self, *args, **kwargs):
         return self.oerp.write(*args, **kwargs)
 
+    def write_record(self, *args, **kwargs):
+        return self.oerp.write_record(*args, **kwargs)
+
+    def exec_workflow(self, *args, **kwargs):
+        return self.oerp.exec_workflow(*args, **kwargs)
+
     def browse(self, *args, **kwargs):
         return self.oerp.browse(*args, **kwargs)

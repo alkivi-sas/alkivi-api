@@ -150,5 +150,5 @@ class API:
         if r.status_code != 200:
             raise APIError(int(r.status_code), r)
 
-        return r.json
+        return r.json()
 
