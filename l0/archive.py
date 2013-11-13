@@ -105,11 +105,13 @@ class Session(sql.Model,Base):
             # TODO : use hash as well ?
             from dateutil.parser import parse
             for attr in ['startDate', 'endDate']:
-                date = parse(remote[attr], fuzzy=True)
-                newDate = date.strftime("%Y-%m-%d %H:%M:%S")
-                if(getattr(self,attr) != newDate):
-                    setattr(self, attr, newDate)
-                    changes=True
+                # Might be null in some case
+                if(remote[attr]):
+                    date = parse(remote[attr], fuzzy=True)
+                    newDate = date.strftime("%Y-%m-%d %H:%M:%S")
+                    if(getattr(self,attr) != newDate):
+                        setattr(self, attr, newDate)
+                        changes=True
 
             # Well well
             if(changes):
