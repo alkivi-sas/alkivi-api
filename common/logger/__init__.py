@@ -254,22 +254,19 @@ class Logger():
         self.currentLogger.setPrefix(*args, **kwargs)
 
     # Helper to reset level after log creation
-    def setMinLevelToSave(self, *args, **kwargs):
-        print "todo"
-
     def setMinLevelToPrint(self, level):
-        self.min_log_level_to_print = level
         self.currentLogger.setMinLevelToPrint(level)
+        self.min_log_level_to_print = level
 
     def setMinLevelToSave(self, level):
         self.min_log_level_to_save = level
         self.currentLogger.setMinLevelToSave(level)
 
-    def setMinLevelToMail(self, *args, **kwargs):
+    def setMinLevelToMail(self, level):
         self.min_log_level_to_mail = level
         self.currentLogger.setMinLevelToMail(level)
 
-    def setMinLevelToSyslog(self, *args, **kwargs):
+    def setMinLevelToSyslog(self, level):
         self.min_log_level_to_syslog = level
         self.currentLogger.setMinLevelToSyslog(level)
 
@@ -387,7 +384,7 @@ class LoggerIteration():
     def setMinLevelToPrint(self, level):
         self.min_log_level_to_print = level
 
-        if(self.consoleHandler != None):
+        if(self.consoleHandler and level):
             self.consoleHandler.setLevel(level)
         elif(level != None):
             self.setStreamHandler()
@@ -397,9 +394,9 @@ class LoggerIteration():
     def setMinLevelToSave(self, level):
         self.min_log_level_to_save = level
 
-        if(self.fileHandler != None):
+        if(self.fileHandler and level):
             self.fileHandler.setLevel(level)
-        elif(level != None):
+        elif(level):
             self.setTimeRotatingFileHandler()
         else:
             self.deleteTimeRotatingFileHandler()
@@ -407,9 +404,9 @@ class LoggerIteration():
     def setMinLevelToSyslog(self, level):
         self.min_log_level_to_syslog = level
 
-        if(self.syslogHandler != None):
+        if(self.syslogHandler and level):
             self.syslogHandler.setLevel(level)
-        elif(level != None):
+        elif(level):
             self.setSyslogHandler()
         else:
             self.deleteSyslogHandler()
@@ -417,9 +414,9 @@ class LoggerIteration():
     def setMinLevelToMail(self, level):
         self.min_log_level_to_mail = level
 
-        if(self.emailHandler != None):
+        if(self.emailHandler and level):
             self.emailHandler.setLevel(level)
-        elif(level != None):
+        elif(level):
             self.setAlkiviEmailHandler()
         else:
             self.deleteAlkiviEmailHandler()
@@ -555,8 +552,8 @@ def setMinLevelToPrint(level):
 def setMinLevelToSave(level):
     Logger.instance().setMinLevelToSave(level)
 
-def setMinLevelToPrint(level):
-    Logger.instance().setMinLevelToPrint(level)
+def setMinLevelToMail(level):
+    Logger.instance().setMinLevelToMail(level)
 
-def setMinLevelToPrint(level):
-    Logger.instance().setMinLevelToPrint(level)
+def setMinLevelToSyslog(level):
+    Logger.instance().setMinLevelToSyslog(level)
