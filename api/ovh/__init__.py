@@ -7,6 +7,7 @@ import time
 import hashlib
 import os
 import re
+import json
 
 import sys
 reload(sys)
@@ -150,5 +151,5 @@ class API:
         if r.status_code != 200:
             raise APIError(int(r.status_code), r)
 
-        return r.json()
+        return json.loads(r.text)
 
