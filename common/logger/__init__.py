@@ -255,8 +255,8 @@ class Logger():
 
     # Helper to reset level after log creation
     def setMinLevelToPrint(self, level):
-        self.currentLogger.setMinLevelToPrint(level)
         self.min_log_level_to_print = level
+        self.currentLogger.setMinLevelToPrint(level)
 
     def setMinLevelToSave(self, level):
         self.min_log_level_to_save = level
@@ -319,6 +319,8 @@ class LoggerIteration():
 
         self.prefixes     = []
         
+        # Create formatter
+        self.setFormatter()
 
         # Auto declare handler
         self.setStreamHandler()
@@ -326,60 +328,11 @@ class LoggerIteration():
         self.setTimeRotatingFileHandler()
         self.setAlkiviEmailHandler()
 
-        # Create formatter
-        self.setFormatter()
-
-        # Set handlers formatter
-        self.setHandlers()
-
         # Set logger handlers
         self.enable()
 
     """
-        Function that ease logger creation
-    """
-    def setStreamHandler(self):
-        if(self.min_log_level_to_print != None):
-            self.consoleHandler = logging.StreamHandler()
-            self.consoleHandler.setLevel(self.min_log_level_to_print)
-            self.handlers.append(self.consoleHandler)
-
-    def deleteStreamHandler(self):
-        #TODO
-        pass
-
-    def setSyslogHandler(self):
-        if(self.min_log_level_to_syslog != None):
-            self.syslogHandler = logging.handlers.SysLogHandler(address = '/dev/log')
-            self.syslogHandler.setLevel(self.min_log_level_to_syslog)
-            self.handlers.append(self.syslogHandler)
-
-    def deleteSyslogHandler(self):
-        #TODO
-        pass
-
-    def setTimeRotatingFileHandler(self):
-        if(self.min_log_level_to_save != None):
-            self.fileHandler = logging.handlers.TimedRotatingFileHandler(self.filename, when='midnight')
-            self.fileHandler.setLevel(self.min_log_level_to_save)
-            self.handlers.append(self.fileHandler)
-
-    def deleteTimeRotatingFileHandler(self):
-        #TODO
-        pass
-
-    def setAlkiviEmailHandler(self):
-        if(self.min_log_level_to_mail != None and len(self.emails) > 0):
-            self.emailHandler = AlkiviEmailHandler(mailhost='127.0.0.1', fromaddr="%s@%s" % (user, host), toaddrs=self.emails, level=self.min_log_level_to_mail)
-            self.emailHandler.setLevel(NOTSET) # Needed, we want all log to go thought this
-            self.handlers.append(self.emailHandler)
-
-    def deleteAlkiviEmailHandler(self):
-        #TODO
-        pass
-
-    """
-        Function to set level to log after creation
+        Function for print logger
     """
     def setMinLevelToPrint(self, level):
         self.min_log_level_to_print = level
@@ -391,16 +344,24 @@ class LoggerIteration():
         else:
             self.deleteStreamHandler()
 
-    def setMinLevelToSave(self, level):
-        self.min_log_level_to_save = level
+    def setStreamHandler(self):
+        if(self.min_log_level_to_print != None):
+            self.consoleHandler = logging.StreamHandler()
+            self.consoleHandler.setLevel(self.min_log_level_to_print)
+            self.consoleHandler.setFormatter(self.getFormatter(self.consoleHandler))
+            self.logger.addHandler(self.consoleHandler)
+            self.handlers.append(self.consoleHandler)
 
-        if(self.fileHandler and level):
-            self.fileHandler.setLevel(level)
-        elif(level):
-            self.setTimeRotatingFileHandler()
-        else:
-            self.deleteTimeRotatingFileHandler()
+    def deleteStreamHandler(self):
+        if(self.consoleHandler):
+            for handler in self.handlers:
+                if(handler == self.consoleHandler):
+                    self.logger.removeHandler(handler)
+            self.consoleHandler = None
 
+    """
+        Function for syslog logger
+    """
     def setMinLevelToSyslog(self, level):
         self.min_log_level_to_syslog = level
 
@@ -411,6 +372,52 @@ class LoggerIteration():
         else:
             self.deleteSyslogHandler()
 
+    def setSyslogHandler(self):
+        if(self.min_log_level_to_syslog != None):
+            self.syslogHandler = logging.handlers.SysLogHandler(address = '/dev/log')
+            self.syslogHandler.setLevel(self.min_log_level_to_syslog)
+            self.syslogHandler.setFormatter(self.getFormatter(self.syslogHandler))
+            self.logger.addHandler(self.syslogHandler)
+            self.handlers.append(self.syslogHandler)
+
+    def deleteSyslogHandler(self):
+        if(self.syslogHandler):
+            for handler in self.handlers:
+                if(handler == self.syslogHandler):
+                    self.logger.removeHandler(handler)
+            self.syslogHandler = None
+
+    """
+        Function for file logger
+    """
+    def setMinLevelToSave(self, level):
+        self.min_log_level_to_save = level
+
+        if(self.fileHandler and level):
+            self.fileHandler.setLevel(level)
+        elif(level):
+            self.setTimeRotatingFileHandler()
+        else:
+            self.deleteTimeRotatingFileHandler()
+
+    def setTimeRotatingFileHandler(self):
+        if(self.min_log_level_to_save != None):
+            self.fileHandler = logging.handlers.TimedRotatingFileHandler(self.filename, when='midnight')
+            self.fileHandler.setLevel(self.min_log_level_to_save)
+            self.fileHandler.setFormatter(self.getFormatter(self.fileHandler))
+            self.logger.addHandler(self.fileHandler)
+            self.handlers.append(self.fileHandler)
+
+    def deleteTimeRotatingFileHandler(self):
+        if(self.fileHandler):
+            for handler in self.handlers:
+                if(handler == self.fileHandler):
+                    self.logger.removeHandler(handler)
+            self.fileHandler = None
+
+    """
+        Function for email logger
+    """
     def setMinLevelToMail(self, level):
         self.min_log_level_to_mail = level
 
@@ -420,6 +427,25 @@ class LoggerIteration():
             self.setAlkiviEmailHandler()
         else:
             self.deleteAlkiviEmailHandler()
+
+    def setAlkiviEmailHandler(self):
+        if(self.min_log_level_to_mail != None and len(self.emails) > 0):
+            self.emailHandler = AlkiviEmailHandler(mailhost='127.0.0.1', fromaddr="%s@%s" % (user, host), toaddrs=self.emails, level=self.min_log_level_to_mail)
+            self.emailHandler.setLevel(NOTSET) # Needed, we want all log to go thought this
+            self.emailHandler.setFormatter(self.getFormatter(self.emailHandler))
+            self.logger.addHandler(self.emailHandler)
+            self.handlers.append(self.emailHandler)
+
+    def deleteAlkiviEmailHandler(self):
+        if(self.emailHandler):
+            for handler in self.handlers:
+                if(handler == self.emailHandler):
+                    self.logger.removeHandler(handler)
+            self.emailHandler = None
+
+
+
+
 
     """
         Only one function to log, called by Logger
