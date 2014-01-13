@@ -169,14 +169,13 @@ class Model():
         return query.one()
 
 
-    # First newFromCharacteristics if no one found, the new and commit
+    # First newFromCharacteristics if no one found, the new and still dont commit
     def newFromCharacteristicsOrCreate(self, *args, **kwargs):
         from sqlalchemy.orm.exc import NoResultFound
         try:
             result = self.newFromCharacteristics(*args, **kwargs)
         except NoResultFound as e:
             result = self.new(*args, **kwargs)
-            result.save()
         except:
             raise
 

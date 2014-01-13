@@ -1,5 +1,5 @@
 from alkivi.common import sql
-from sqlalchemy import Column, Date, Integer, String, Index, ForeignKey, Float
+from sqlalchemy import Column, Date, Integer, String, Index, ForeignKey, Float, DateTime
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from alkivi.common import logger
@@ -14,33 +14,80 @@ class Db():
         self = sql.Db.instance(useData='billing', echo=echo)
         Base.metadata.create_all(self.engine)
 
-class BankStatement(sql.Model,Base):
-    __tablename__ = 'bank_statement'
+class BankAccount(sql.Model, Base):
+    __tablename__ = 'bank_accounts'
 
     # Need to instanciate db (singleton) 
     Db()
 
 
     # Table Scheme
-    id             = Column(Integer, primary_key = True)
-    bankId         = Column(String(30))
-    bankAccount    = Column(String(30))
-    operationDate  = Column(Date)
-    valueDate      = Column(Date, nullable=False)
-    amount         = Column(Float, nullable=False)
-    title          = Column(String(100), nullable=False)
-    openerpId      = Column(Integer)
-    md5line        = Column(String(32), nullable=False)
+    id = Column(Integer, primary_key = True)
+    accountGroupId = Column(Integer)
+    accountGroupName = Column(String(30))
+    accountNumber = Column(String(30))
+    name = Column(String(120))
+    type = Column(String(30))
 
     # Indexes
     indexes = []
-    indexes.append(Index('idx_operationDate', operationDate))
-    indexes.append(Index('idx_valueDate', valueDate))
-    indexes.append(Index('idx_md5', md5line, unique=True))
+    indexes.append(Index('idx_accountNumber', accountNumber))
+    indexes.append(Index('idx_type', type))
+    indexes.append(Index('idx_accountGroupId', accountGroupId))
+    indexes.append(Index('idx_accountGroupName', accountGroupName))
+    
+
+    # Database configuration
+    @declared_attr
+    def __table_args__(cls):
+        __table_args__ = cls.indexes
+        return tuple(__table_args__)
+
+    # Functions
+    def __repr__(self):
+        return "<BankAccount ('%d','%s', '%s')>" % (self.id or 0, self.accountGroupName or 'empty', self.name or 'empty')
+
+    def newFromLinxo(self, object):
+        characteristics = { 'id' : object['id'] }
+        self = self.newFromCharacteristicsOrCreate(characteristics = characteristics)
+
+        for key in ['accountGroupId', 'accountGroupName', 'accountNumber', 'name', 'type']:
+            setattr(self, key, object[key])
+
+        self.save()
+        return self
+
+
+class BankTransaction(sql.Model,Base):
+    __tablename__ = 'bank_transactions'
+
+    # Need to instanciate db (singleton) 
+    Db()
+
+
+    # Table Scheme
+    id = Column(Integer, primary_key = True)
+    bankAccountId = Column(Integer)
+    openerpId = Column(Integer)
+    amount = Column(Float, nullable=False)
+    budgetDate = Column(DateTime)
+    categoryId = Column(Integer)
+    date = Column(DateTime)
+    label = Column(String(32))
+    notes = Column(String(255))
+    originalCategory = Column(Integer)
+    originalCity = Column(String(32))
+    originalDateAvailable = Column(DateTime)
+    originalDateInitiated = Column(DateTime)
+    originalLabel = Column(String(32))
+    originalThirdParty = Column(String(32))
+
+    # Indexes
+    indexes = []
+    indexes.append(Index('idx_bankAccountId', bankAccountId))
+    indexes.append(Index('idx_date', date))
+    indexes.append(Index('idx_budgetDate', budgetDate))
     indexes.append(Index('idx_amount', amount))
-    indexes.append(Index('idx_openerpId', openerpId))
-    indexes.append(Index('idx_bankId', bankId))
-    indexes.append(Index('idx_bankAccount', bankAccount))
     
 
     # Database configuration
@@ -52,4 +99,24 @@ class BankStatement(sql.Model,Base):
 
     # Functions
     def __repr__(self):
-        return "<BankStatement ('%s')>" % (self.id)
+        return "<BankStatement ('%d', '%s', '%.2f')>" % (self.id or 0, self.label or '', self.amount or '0.0')
+
+    def newFromLinxo(self, object):
+        characteristics = { 'id' : object['id'] }
+        self = self.newFromCharacteristicsOrCreate(characteristics = characteristics)
+
+        for key in ['bankAccountId', 'amount', 'categoryId', 'label', 'notes', 'originalCategory', 'originalCity', 'originalLabel', 'originalThirdParty']:
+            # According to linxo bank, we dont have the same info. Some keys might be missing
+            if key in object:
+                setattr(self, key, object[key])
+
+        # Special treatment for timestamp
+        from datetime import datetime
+        for key in ['budgetDate', 'date', 'originalDateAvailable', 'originalDateInitiated']:
+            # According to linxo bank, we dont have the same info. Some keys might be missing
+            if key in object:
+                value = datetime.fromtimestamp(int(object[key]))
+                setattr(self, key, value)
+
+
+        return self
