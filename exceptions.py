@@ -1,21 +1,17 @@
 class ObjectNotFound(Exception):
-    """
-    When unable to find a object
+    """Unable to find a object
     """
 
-class NoUniqueObjectFound(Exception):
-    """
-    When multiple object are found
+class MultipleObjectFound(Exception):
+    """Multiple object are found
     """
 
 class MissingParameter(KeyError):
-    """
-    When one parameter is missing
+    """One parameter is missing
     """
 
 class InvalidParameter(KeyError):
-    """
-    When one parameter is not correct
+    """One parameter is not correct
     """
 
 
