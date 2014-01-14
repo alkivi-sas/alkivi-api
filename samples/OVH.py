@@ -10,8 +10,7 @@ sys.path.append('/')
 # Define Logger : check samples script in alkivi-api/sample/testLogger.py
 #
 from alkivi.common import logger
-from alkivi.common.logger import Logger
-logger = Logger.instance(
+logger.Logger.instance(
         min_log_level_to_mail  = None,
         min_log_level_to_save  = logger.DEBUG,
         min_log_level_to_print = logger.DEBUG,
@@ -22,22 +21,22 @@ logger = Logger.instance(
 # Define OVH API
 #
 from alkivi.api import ovh
-api = ovh.API(useData='alkivi')
+api = ovh.API(use_data='alkivi')
 
 
 #
 # Basic Me Info
 #
 from alkivi.api.ovh import me
-OVH_Me = me.OVH_Me(api=api)
-logger.log(OVH_Me.getMyInfo())
+Me = me.Me(api=api)
+logger.log(Me.getMyInfo())
 
 
 #
 # Init a pca
 #
-serviceName    = 'toto'
-pcaServiceName = 'toto'
+service_name    = 'toto'
+pca_service_name = 'toto'
 from alkivi.api.ovh import PCA
-OVH_PCA = PCA.OVH_PCA(api=api, serviceName=serviceName, pcaServiceName=pcaServiceName)
-logger.log(OVH_PCA.getSessions())
+PCA = PCA.PCA(api=api, service_name=service_name, pca_service_name=pca_service_name)
+logger.log(PCA.getSessions())
