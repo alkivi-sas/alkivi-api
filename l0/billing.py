@@ -47,7 +47,7 @@ class BankAccount(sql.Model, Base):
     def __repr__(self):
         return "<BankAccount ('%d','%s', '%s')>" % (self.id or 0, self.accountGroupName or 'empty', self.name or 'empty')
 
-    def newFromLinxo(self, object):
+    def new_from_linxo(self, object):
         characteristics = { 'id' : object['id'] }
         self = self.newFromCharacteristicsOrCreate(characteristics = characteristics)
 
@@ -101,7 +101,7 @@ class BankTransaction(sql.Model,Base):
     def __repr__(self):
         return "<BankStatement ('%d', '%s', '%.2f')>" % (self.id or 0, self.label or '', self.amount or '0.0')
 
-    def newFromLinxo(self, object):
+    def new_from_linxo(self, object):
         characteristics = { 'id' : object['id'] }
         self = self.newFromCharacteristicsOrCreate(characteristics = characteristics)
 

@@ -1,22 +1,27 @@
-#TODO : dive in postgre ? :)
+"""
+Class that represents OVH object in our database
+"""
 from alkivi.common import sql
-from sqlalchemy import Column, Date, Integer, String, Index, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, Integer, String, Index, ForeignKey
+from sqlalchemy import DateTime, BigInteger
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
-from sqlalchemy.dialects.mysql import DATETIME, BIGINT
 from alkivi.common import logger
 
 Base = declarative_base()
 
 class Db():
+    """Class that handle our database
+    """
     instance = None
 
     def __init__(self, echo=False):
-        # Will fetch credentials in a secureData file ... check /alkivi/common/sql.py
-        self = sql.Db.instance(useData='archive', echo=echo)
+        self = sql.Db.instance(use_data='archive', echo=echo)
         Base.metadata.create_all(self.engine)
 
-class PCA(sql.Model,Base):
+class PCA(sql.Model, Base):
+    """Store OVH PCA information
+    """
     __tablename__ = 'pca'
 
     # Need to instanciate db (singleton) 
@@ -24,14 +29,16 @@ class PCA(sql.Model,Base):
 
 
     # Table Scheme
-    id             = Column(Integer, primary_key = True)
-    serviceName    = Column(String(30))
-    pcaServiceName = Column(String(30))
+    id = Column(Integer, primary_key = True)
+    service_name = Column(String(30))
+    pca_service_name = Column(String(30))
 
 
     # Indexes
     indexes = []
-    indexes.append(Index('idx_unique_pca', serviceName, pcaServiceName, unique=True))
+    indexes.append(Index('idx_unique_pca',
+                         service_name, 
+                         pca_service_name, unique=True))
     
 
     # Relationship
@@ -42,15 +49,16 @@ class PCA(sql.Model,Base):
     @declared_attr
     def __table_args__(cls):
         __table_args__ = cls.indexes
-        __table_args__.append({'mysql_engine':'InnoDB', 'mysql_charset':'utf8'})
         return tuple(__table_args__)
 
 
     # Functions
     def __repr__(self):
-        return "<PCA('%s','%s')>" % (self.serviceName, self.pcaServiceName)
+        return "<PCA('%d', '%s','%s')>" % (self.id or 0, self.service_name or '', self.pca_service_name or '')
 
-class Session(sql.Model,Base):
+class Session(sql.Model, Base):
+    """Store OVH PCA Sessions informations
+    """
     __tablename__ = 'sessions'
 
     # Need to instanciate db (singleton) 
@@ -58,20 +66,20 @@ class Session(sql.Model,Base):
 
 
     # Table Scheme
-    id          = Column(String(45), primary_key = True)
-    pca_id      = Column(Integer, ForeignKey('pca.id'))
-    size        = Column(BIGINT)
-    ovh_state   = Column(String(20))
+    id = Column(String(45), primary_key = True)
+    pca_id = Column(Integer, ForeignKey('pca.id'))
+    size = Column(BigInteger)
+    ovh_state = Column(String(20))
     local_state = Column(String(20))
-    startDate   = Column(DATETIME)
-    endDate     = Column(DATETIME)
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
 
 
     # Indexes
     indexes = []
-    indexes.append(Index('idx_pca_id'      , pca_id))
-    indexes.append(Index('idx_ovh_state'   , ovh_state))
-    indexes.append(Index('idx_local_state' , local_state))
+    indexes.append(Index('idx_pca_id', pca_id))
+    indexes.append(Index('idx_ovh_state', ovh_state))
+    indexes.append(Index('idx_local_state', local_state))
 
 
     # Relationship
@@ -82,82 +90,84 @@ class Session(sql.Model,Base):
     @declared_attr
     def __table_args__(cls):
         __table_args__ = cls.indexes
-        __table_args__.append({'mysql_engine':'InnoDB', 'mysql_charset':'utf8'})
         return tuple(__table_args__)
 
        
     # Functions
     def __repr__(self):
-        return "<Session(id=%s, ovh=%s, local=%s)>" % (self.id, self.ovh_state, self.local_state)
+        return "<Session(id=%s, ovh=%s, local=%s)>" % (self.id or '', self.ovh_state or '', self.local_state or '')
 
-    def syncWithRemote(self, remote):
-        if(self.local_state == 'synced' and self.ovh_state == remote['state']):
+    def sync_with_remote(self, remote):
+        """Sync between ovh data and local
+        """
+        if self.local_state == 'synced' and self.ovh_state == remote['state']:
             return self
         else:
-            changes=False
-            dict = { 'size': 'size', 'ovh_state': 'state' }
-            for local_attr, remote_attr in dict.iteritems(): 
-                if(getattr(self,local_attr) != remote[remote_attr]):
+            changes = False
+            ovh_dict = { 'size': 'size', 'ovh_state': 'state' }
+            for local_attr, remote_attr in ovh_dict.iteritems(): 
+                if getattr(self, local_attr) != remote[remote_attr]:
                     setattr(self, local_attr, remote[remote_attr])
-                    changes=True
+                    changes = True
 
-            # Special data for date 
-            # TODO : use hash as well ?
             from dateutil.parser import parse
-            for attr in ['startDate', 'endDate']:
+            for attr in ['start_date', 'end_date']:
                 # Might be null in some case
-                if(remote[attr]):
+                if remote[attr]:
                     date = parse(remote[attr], fuzzy=True)
-                    newDate = date.strftime("%Y-%m-%d %H:%M:%S")
-                    if(getattr(self,attr) != newDate):
-                        setattr(self, attr, newDate)
-                        changes=True
+                    new_date = date.strftime("%Y-%m-%d %H:%M:%S")
+                    if getattr(self, attr) != new_date:
+                        setattr(self, attr, new_date)
+                        changes = True
 
-            # Well well
-            if(changes):
+            if changes:
                 self.update()
 
             # Test is made with all file inside ...
             return self
 
-    def deleteAllFiles(self):
-        filesToDelete = self.files
-        for file in filesToDelete:
-            logger.debug('Going to delete file %s' %(file))
-            file.delete()
+    def delete_all_files(self):
+        """Delete all files in a sessions, might be very very long
+        """
+        files = self.files
+        for todo_file in files:
+            logger.debug('Going to delete file %s' %(todo_file))
+            todo_file.delete()
 
 
 class File(sql.Model, Base):
+    """Wrapper to represents files
+    """
     __tablename__ = 'files'
 
     # Need to instanciate db (singleton) 
     Db()
 
     # Table Scheme
-    id          = Column(String(45), primary_key = True)
-    session_id  = Column(String(45), ForeignKey('sessions.id'))
-    name        = Column(String(255))
-    fileName    = Column(String(60))
-    type        = Column(String(50))
-    size        = Column(BIGINT)
-    sha1        = Column(String(40))
-    sha256      = Column(String(64))
-    md5         = Column(String(32))
-    ovh_state   = Column(String(20))
+    id = Column(String(45), primary_key=True)
+    session_id = Column(String(45), ForeignKey('sessions.id'))
+    name = Column(String(255))
+    file_name = Column(String(60))
+    file_type = Column(String(50))
+    size = Column(BigInteger)
+    sha1 = Column(String(40))
+    sha256 = Column(String(64))
+    md5 = Column(String(32))
+    ovh_state = Column(String(20))
     local_state = Column(String(20))
 
 
     # Indexes
     indexes = []
-    indexes.append(Index('idx_session_id'  , session_id))
-    indexes.append(Index('idx_name'        , name))
-    indexes.append(Index('idx_fileName'    , fileName))
-    indexes.append(Index('idx_type'        , type))
-    indexes.append(Index('idx_sha1'        , sha1         , mysql_length=10))
-    indexes.append(Index('idx_sha256'      , sha256       , mysql_length=16))
-    indexes.append(Index('idx_md5'         , sha256       , mysql_length=8))
-    indexes.append(Index('idx_ovh_state'   , ovh_state))
-    indexes.append(Index('idx_local_state' , local_state))
+    indexes.append(Index('idx_session_id', session_id))
+    indexes.append(Index('idx_name', name))
+    indexes.append(Index('idx_file_name', file_name))
+    indexes.append(Index('idx_type', file_type))
+    indexes.append(Index('idx_sha1', sha1))
+    indexes.append(Index('idx_sha256', sha256))
+    indexes.append(Index('idx_md5', md5))
+    indexes.append(Index('idx_ovh_state', ovh_state))
+    indexes.append(Index('idx_local_state', local_state))
 
 
     # Relationship
@@ -167,47 +177,48 @@ class File(sql.Model, Base):
     @declared_attr
     def __table_args__(cls):
         __table_args__ = cls.indexes
-        __table_args__.append({'mysql_engine':'InnoDB', 'mysql_charset':'utf8'})
         return tuple(__table_args__)
 
        
     # Functions
     def __repr__(self):
-        return "<File('%s','%s', '%s')>" % (self.id, self.name, self.size)
+        return "<File('%s','%s', '%s')>" % (self.id or 0, self.name or '', self.size or '')
 
-    def syncWithRemote(self, remote):
-        # Do we have an update from remote ?
-        if(self.ovh_state == remote['state']):
+    def sync_with_remote(self, remote):
+        """Sync information between ovh API and our database
+        """
+
+        if self.ovh_state == remote['state']:
             return self.ovh_state == 'done'
         else:
-            changes=False
+            changes = False
             # Use a dict to be able to map different key names
-            dict = { 
-                    'name'      : 'name',
-                    'type'      : 'type',
-                    'size'      : 'size',
-                    'sha1'      : 'SHA1',
-                    'sha256'    : 'SHA256',
-                    'md5'       : 'MD5',
-                    'ovh_state' : 'state',
-                    }
+            ovh_dict = { 
+                    'name': 'name',
+                    'file_type': 'type',
+                    'size': 'size',
+                    'sha1': 'SHA1',
+                    'sha256': 'SHA256',
+                    'md5': 'MD5',
+                    'ovh_state': 'state',
+                }
 
-            for local_attr, remote_attr in dict.iteritems(): 
-                if(getattr(self,local_attr) != remote[remote_attr]):
-                    # Fix fileName by splitting path
-                    if(local_attr=='name'):
-                        self.fileName = remote[remote_attr].split('/')[-1]
+            for local_attr, remote_attr in ovh_dict.iteritems(): 
+                if getattr(self, local_attr) != remote[remote_attr]:
+                    # Fix file_name by splitting path
+                    if local_attr == 'name':
+                        self.file_name = remote[remote_attr].split('/')[-1]
 
                     setattr(self, local_attr, remote[remote_attr])
-                    changes=True
+                    changes = True
 
             # At this point, we are synced
-            if(self.local_state != 'synced'):
+            if self.local_state != 'synced':
                 self.local_state = 'synced'
                 changes = True
 
             # Well well
-            if(changes):
+            if changes:
                 self.update()
 
             # Return true is remote state is done
