@@ -1,21 +1,38 @@
-class OVH_PCA:
+"""
+Helpers to ease calls on OVH api
+"""
+
+class PCA:
     """
     This class is used to ease access to pca file and data
     """
-    def __init__(self, api, serviceName, pcaServiceName):
-        self.api            = api
-        self.serviceName    = serviceName
-        self.pcaServiceName = pcaServiceName
 
-    def getSessions(self):
-        return self.api.get('/cloud/'+self.serviceName+'/pca/'+self.pcaServiceName+'/sessions')
+    def __init__(self, api, service_name, pca_service_name):
+        self.api = api
+        self.service_name = service_name
+        self.pca_service_name = pca_service_name
 
-    def getSession(self, session_id):
-        return self.api.get('/cloud/'+self.serviceName+'/pca/'+self.pcaServiceName+'/sessions/'+session_id)
+    def get_sessions(self):
+        """Return array of sessions id
+        """
+        url = '/cloud/%s/pca/%s/sessions' % (self.service_name, self.pca_service_name)
+        return self.api.get(url)
 
-    def getFiles(self, session_id):
-        return self.api.get('/cloud/'+self.serviceName+'/pca/'+self.pcaServiceName+'/sessions/'+session_id+'/files')
+    def get_session(self, session_id):
+        """Get session infomration
+        """
+        url = '/cloud/%s/pca/%s/sessions/%s' % (self.service_name, self.pca_service_name, session_id)
+        return self.api.get(url)
 
-    def getFile(self, session_id, file_id):
-        return self.api.get('/cloud/'+self.serviceName+'/pca/'+self.pcaServiceName+'/sessions/'+session_id+'/files/'+file_id)
+    def get_files(self, session_id):
+        """Get id of files in session
+        """
+        url = '/cloud/%s/pca/%s/sessions/%s/files' % (self.service_name, self.pca_service_name, session_id)
+        return self.api.get(url)
+
+    def get_file(self, session_id, file_id):
+        """Get file specific data
+        """
+        url = '/cloud/%s/pca/%s/sessions/%s/files/%s' % (self.service_name, self.pca_service_name, session_id, file_id)
+        return self.api.get(url)
 
