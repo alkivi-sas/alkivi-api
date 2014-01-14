@@ -25,6 +25,7 @@ class APIError(Exception):
     def __init__(self, result):
         self.result = result
         super(APIError, self).__init__()
+
     def __str__(self):
         return '%s errorMessage: %s failedAction: %s' % (
             self.result['errorCode'],
