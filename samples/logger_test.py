@@ -1,13 +1,16 @@
 #!/usr/bin/python
 # -*-coding:utf-8 -*
 
+"""
+Sample script to show the use of our logger
+"""
+
 import sys
 reload(sys)
 sys.setdefaultencoding("utf-8")
 sys.path.append('/')
 
 from alkivi.common import logger
-from alkivi.common.logger import Logger
 
 #
 # Define Logger
@@ -22,7 +25,7 @@ logger.Logger.instance(
 #
 # Never use print for debug, it's not store anywhere :)
 #
-for i in range(0,10):
+for i in range(0, 10):
     print "Useless print for i = %d" % (i)
 
 #
@@ -40,33 +43,38 @@ logger.critical('THis is very dangerous, please have a look !')
 #
 # You can pass any object, it will be dumped in display
 #
-example = { 'test':'toto', 'dzajndnzadjnazkdjnazdkjnazkdaz':'dzadzadaz' }
+EXAMPLE = { 'test':'toto', 'dzajndnzadjnazkdjnazdkjnazkdaz':'dzadzadaz' }
 import datetime
-bis = ['toto', { ',akd,zakd,azkdza' : 'dzjakdjazkdaz' }, datetime.datetime.now() ]
-logger.log('Test with example object which fallow', example)
-logger.log('We have a probleme with example test with bis', example, bis)
+BIS = ['toto', 
+        { ',akd,zakd,azkdza' : 'dzjakdjazkdaz' }, 
+        datetime.datetime.now() ]
+logger.log('Test with example object which fallow', EXAMPLE)
+logger.log('We have a probleme with example test with bis', EXAMPLE, BIS)
 
 
 
 #
 # Now let's do some loop
 #
-logger.newLoopLogger()
-for i in range(0,11):
-    logger.newIteration(prefix='i=%i' % (i))
+logger.new_loop_logger()
+for i in range(0, 11):
+    logger.new_iteration(prefix='i=%i' % (i))
     logger.debug("We are now prefixing all logger")
-    if(i==9):
+    if i == 9:
         logger.debug("Lets do another loop")
-        logger.newLoopLogger()
-        for j in range(0,5):
-            logger.newIteration(prefix='j=%i' % (j))
+        logger.new_loop_logger()
+        for j in range(0, 5):
+            logger.new_iteration(prefix='j=%i' % (j))
             logger.debug("Alkivi pow@")
 
         # Dont forget to close logger or shit will happen
-        logger.delLoopLogger()
-    if(i==10):
+        logger.del_loop_logger()
+    if i == 10:
         logger.critical("We shall receive only mail for last loop")
 
-logger.delLoopLogger()
+logger.del_loop_logger()
 logger.debug('We now remove an loop, thus a prefix')
 logger.critical('test')
+
+# You can set the level after creation
+logger.set_min_log_level_to_print(logger.DEBUG)
