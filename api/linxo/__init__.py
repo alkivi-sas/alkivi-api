@@ -11,6 +11,7 @@ sys.setdefaultencoding("utf-8")
 sys.path.append('/')
 
 from alkivi.common import logger
+from alkivi.exceptions import *
 
 def _get_headers():
     """Define header to use in requests
@@ -110,9 +111,27 @@ class API(object):
 
         return self._perform_query(payload)
 
-    def get_transactions(self, account):
+    def get_transactions(self, *args, **kwargs):
         """Fetch latest operation on linxo, specific to one account
         """
+
+        if 'account' in kwargs:
+            account = kwargs['account']
+        else:
+            raise MissingParameter('account')
+
+        if 'start_row' in kwargs:
+            start_row = kwargs['start_row']
+        else:
+            start_row = 0
+
+        if 'num_rows' in kwargs:
+            num_rows = kwargs['num_rows']
+        else:
+            num_rows = 100
+
+        logger.debug('Going to fetch %s transaction for account %s starting at %s' % (
+            num_rows, account['id'], start_row))
 
         payload = {
             'actionName' : 'com.linxo.gwt.rpc.client.pfm.GetTransactionsAction',
@@ -122,10 +141,11 @@ class API(object):
                 'labels' : [],
                 'categoryId' : None,
                 'tagId' : None,
-                'startRow' : 0,
-                'numRows' : 100,
+                'startRow' : start_row,
+                'numRows' : num_rows,
             }
         }
+
         return self._perform_query(payload)
 
     def _login(self):

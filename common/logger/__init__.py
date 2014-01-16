@@ -434,7 +434,7 @@ class LoggerIteration():
                     self.logger.removeHandler(handler)
             self.syslog_handler = None
 
-    def _set_min_level_to_save(self, level):
+    def set_min_level_to_save(self, level):
         """Set the level to start saving log to files
         """
         self.min_log_level_to_save = level

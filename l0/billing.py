@@ -134,8 +134,9 @@ class BankAccount(sql.Model, Base):
 
         for data_type in self._get_data_types():
             for local_key, linxo_key in self._get_translation_dict(data_type).iteritems():
-                value = format_linxo_data(linxo[linxo_key], data_type)
-                setattr(self, local_key, value)
+                if linxo_key in linxo:
+                    value = format_linxo_data(linxo[linxo_key], data_type)
+                    setattr(self, local_key, value)
 
         self.save()
         return self
@@ -174,14 +175,14 @@ class BankTransaction(sql.Model, Base):
     budget_date = Column(DateTime)
     category_id = Column(Integer)
     date = Column(DateTime)
-    label = Column(String(32))
+    label = Column(String(255))
     notes = Column(String(255))
     original_category = Column(Integer)
-    original_city = Column(String(32))
+    original_city = Column(String(255))
     original_date_available = Column(DateTime)
     original_date_initiated = Column(DateTime)
-    original_label = Column(String(32))
-    original_third_party = Column(String(32))
+    original_label = Column(String(255))
+    original_third_party = Column(String(255))
 
     # Indexes
     indexes = []
@@ -246,8 +247,9 @@ class BankTransaction(sql.Model, Base):
 
         for data_type in self._get_data_types():
             for local_key, linxo_key in self._get_translation_dict(data_type).iteritems():
-                value = format_linxo_data(linxo[linxo_key], data_type)
-                setattr(self, local_key, value)
+                if linxo_key in linxo:
+                    value = format_linxo_data(linxo[linxo_key], data_type)
+                    setattr(self, local_key, value)
 
         return self
 
