@@ -66,7 +66,7 @@ class API:
                 raise Exception('Unable to fetch correct file. ' +
                                 'Check that %s is readable' % (credentials))
             else:
-                f_handler = open(file)
+                f_handler = open(credentials)
 
                 # Check syntax
                 regexp = re.compile('^(.*?):(.*?):(.*?)$')
