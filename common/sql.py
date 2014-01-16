@@ -35,7 +35,7 @@ class Db(object):
                 'Check that %s exists and is readable' % (credentials))
 
         # Open file
-        f_handler = open(file)
+        f_handler = open(credentials)
 
         # Check syntax
         regexp = re.compile('^(.*?):(.*?):(.*?):(.*?):(.*?):(.*?)$')
@@ -185,18 +185,31 @@ class Model():
                     logger.debug_debug(
                         "Going to append filter %s=%s" % (attr, value))
                     query = query.filter(getattr(self.__class__, attr)==value)
+        return query
 
 
     def fetch_or_create(self, *args, **kwargs):
         """Try to find an object in database.
-        If no object is found, create and commit one
+        If no object is found, create one
+
+        By default object is save to database
+        
+        Extra parameters : 
+            - no_save : dont save object on creation
         """
+        no_save = None
+        if 'no_save' in kwargs:
+            no_save = kwargs['no_save']
+
         from sqlalchemy.orm.exc import NoResultFound
         try:
             result = self.fetch(*args, **kwargs)
         except NoResultFound:
             result = self.new(*args, **kwargs)
-            result.save()
+            if no_save:
+                logger.debug_debug('no_save activated')
+            else:
+                result.save()
         except:
             raise
 
