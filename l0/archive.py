@@ -111,13 +111,14 @@ class Session(sql.Model, Base):
                     changes = True
 
             from dateutil.parser import parse
-            for attr in ['start_date', 'end_date']:
+            ovh_dict = { 'start_date': 'startDate', 'end_date': 'endDate' }
+            for local_attr, remote_attr in ovh_dict.iteritems(): 
                 # Might be null in some case
-                if attr in remote and remote[attr]:
-                    date = parse(remote[attr], fuzzy=True)
+                if remote and remote[remote_attr]:
+                    date = parse(remote[remote_attr], fuzzy=True)
                     new_date = date.strftime("%Y-%m-%d %H:%M:%S")
-                    if getattr(self, attr) != new_date:
-                        setattr(self, attr, new_date)
+                    if getattr(self, local_attr) != new_date:
+                        setattr(self, local_attr, new_date)
                         changes = True
 
             if changes:
