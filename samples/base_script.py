@@ -53,7 +53,7 @@ def main(argv):
             usage()                     
             sys.exit()                  
         elif opt in ("-d", "--debug"):
-            logger.setMinLevelToPrint(logger.DEBUG)
+            logger.set_min_level_to_print(logger.DEBUG)
             logger.debug('debug activated')
         elif opt in ("-t", "--toto"): 
             dummy_toto = arg
@@ -65,4 +65,4 @@ if __name__ == "__main__":
     try:
         main(sys.argv[1:])
     except Exception as exception:
-        logger.exception(exception)
+        logger.log_exception(exception)
