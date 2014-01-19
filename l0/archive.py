@@ -113,7 +113,7 @@ class Session(sql.Model, Base):
             from dateutil.parser import parse
             for attr in ['start_date', 'end_date']:
                 # Might be null in some case
-                if remote[attr]:
+                if attr in remote and remote[attr]:
                     date = parse(remote[attr], fuzzy=True)
                     new_date = date.strftime("%Y-%m-%d %H:%M:%S")
                     if getattr(self, attr) != new_date:
