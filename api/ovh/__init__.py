@@ -29,7 +29,7 @@ class APIError(Exception):
         super(APIError, self).__init__()
 
     def __str__(self):
-        error = self.response.json
+        error = json.loads(self.response.text)
         return 'httpCode: %s errorCode: %s message: %s' % (error['httpCode'], 
                                                            error['errorCode'], 
                                                            error['message'])
@@ -125,14 +125,18 @@ class API:
         """
         headers = { 'Content-type': 'application/json',
                     'X-Ovh-Application': self.application}
-        params = { 'access_rules': self.access_rules}
+
+        params = {}
+
+        if self.access_rules:
+            params['accessRules'] = self.access_rules
 
         if redirection:
             params['redirection'] = redirection
 
-        query = requests.post(self.url+'/auth/credential', headers=headers, 
+        response = requests.post(self.url+'/auth/credential', headers=headers, 
                               data=json.dumps(params))
-        print query.json
+        logger.info('test', json.loads(response.text))
 
     def get_drift(self):
         """Calculate the time drift between our server and ovh server
