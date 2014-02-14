@@ -29,10 +29,13 @@ class APIError(Exception):
         super(APIError, self).__init__()
 
     def __str__(self):
-        error = self.response.json
-        return 'httpCode: %s errorCode: %s message: %s' % (error['httpCode'], 
-                                                           error['errorCode'], 
-                                                           error['message'])
+        error = json.loads(self.response.text)
+        msg = ''
+
+        for key in ('httpCode', 'errorCode', 'message'):
+            if key in error:
+                msg = msg + '%s: %s' % (key, error[key])
+        return msg
 
 class API:
     """Wrapper that use custom credentials file to perform operation

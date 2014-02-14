@@ -55,6 +55,10 @@ class API:
                                  port=port, version=version)
         self.user = self.oerp.login(user, password, db_name)
 
+        # Create cache for product and taxes
+        self.products_cache = {}
+        self.taxes_cache ={}
+
     def execute(self, *args, **kwargs):
         """Wrapper for oerplib call
         """
@@ -99,3 +103,113 @@ class API:
         """Wrapper for oerplib call
         """
         return self.oerp.browse(*args, **kwargs)
+
+    def fetch_product(self, vat_index):
+        """Fetch product object in openerp and store into cash to avoid repetition
+
+        Fetch product with name Produits et Services %s (20 19,6 ...)
+        """
+
+        # Do we have cache ?
+        if vat_index in self.products_cache:
+            return self.products_cache[vat_index]
+
+        # Fetch associated tax
+        tax = self.fetch_tax(vat_index)
+
+        if tax is None:
+            text = '0'
+        else:
+            text = tax.amount * 100
+            if text == int(text):
+                text = '%2d' % int(text)
+            else:
+                text = '%2.1f' % text
+
+        description = 'Produits et Services %s' % text
+        description = ','.join(re.split('\.', description))
+
+        search_args = [('name_template', 'ilike', description)]
+        product_ids = self.search('product.product', search_args)
+
+        if not product_ids:
+            raise Exception('%s is missing in product.product' % description)
+        elif len(product_ids) > 1:
+            logger.warning('Got several ids', product_ids)
+            raise Exception('More than one product %s' % description)
+
+        product_id = product_ids[0]
+        product = self.browse('product.product', product_id)
+
+        # Update cache
+        self.products_cache[vat_index] = product
+
+        return product
+
+    def fetch_tax(self, vat_index):
+        """Fetch tax object in openerp and store into cash to avoid repetition
+
+        default is fetch from openerp configuration
+        other tax 19.6, 20, are fetch using ACH-20 ...
+        0 mean no tax so return None
+        """
+
+        # No tax object when no tva
+        if vat_index == '0':
+            return None
+
+        # Do we have cache ?
+        if vat_index in self.taxes_cache:
+            return self.taxes_cache[vat_index]
+
+        # Fetch default value in openerp
+        tax_id = None
+
+        if vat_index == 'default':
+            tax_ids = self.execute('ir.values', 'get_default', 'product.product', 'supplier_taxes_id', True, 1, False)
+            tax_id = tax_ids[0]
+        else:
+            search_args = [('description', '=', 'ACH-%s' % vat_index)]
+            tax_ids = self.search('account.tax', search_args)
+            if not tax_ids:
+                raise Exception('tax %s is missing in account.tax' % vat_index)
+            elif len(tax_ids) > 1:
+                logger.warning('Got several ids', tax_ids)
+                raise Exception('More than one tax with description = %s' % vat_index)
+            tax_id = tax_ids[0]
+
+
+        # Check that configuration is correct
+        if tax_id is None:
+            raise Exception('We should have tax_id here')
+
+        tax = self.browse('account.tax', tax_id)
+
+        # Update cache
+        self.taxes_cache[vat_index] = tax
+
+        return tax
+
+    def fetch_supplier(self, name):
+        """Return openerp res.partner using name to search it
+
+        First try exact name, if no match then like
+        """
+
+        search_args = [
+                      ('name', '=', name),
+                      ('supplier', '=', 1) ]
+        supplier_ids = self.search('res.partner', search_args)
+        if not supplier_ids:
+            search_args = [
+                          ('name', 'ilike', name),
+                          ('supplier', '=', 1) ]
+            supplier_ids = self.search('res.partner', search_args)
+
+        if not supplier_ids:
+            raise Exception('Supplier %s not found' % name)
+        elif len(supplier_ids) > 1:
+            raise Exception('Found multiple suppliers with name %s' % name)
+
+        return self.browse('res.partner', supplier_ids[0])
+
