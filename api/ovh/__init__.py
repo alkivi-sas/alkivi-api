@@ -36,8 +36,6 @@ class APIError(Exception):
             if key in error:
                 msg = msg + '%s: %s' % (key, error[key])
         return msg
-                                                           error['errorCode'], 
-                                                           error['message'])
 
 class API:
     """Wrapper that use custom credentials file to perform operation
