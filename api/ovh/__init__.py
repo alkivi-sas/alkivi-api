@@ -43,7 +43,7 @@ class API:
 
     def __init__(self, use_data, access_rules=None, 
                  application=None, secret=None, consumer_key=None,
-                 url='https://api.ovh.com/1.0'):
+                 url='https://api.ovh.com/1.0', version=1):
 
         if access_rules is None:
             access_rules = []
@@ -53,6 +53,7 @@ class API:
         self.consumer_key = consumer_key
         self.access_rules = access_rules
         self.url = url
+        self.version = int(version)
 
 
         # Going to extract data from /alkivi/.secureData
@@ -161,7 +162,17 @@ class API:
         url = self.url+path
 
         sig1 = hashlib.sha1()
-        sig1.update("+".join([self.secret, ckey, req_type, url, data, now]))
+
+        raw = None
+        if self.version == 1:
+            raw = "+".join([self.secret, ckey, req_type, url, data, now])
+        elif self.version == 2:
+            real_url = re.sub('(.*)api/1\.0', 'api/1.0', url)
+            raw = "+".join([self.secret, ckey, req_type, real_url, data, now])
+        else:
+            raise Exception('Unknow version %d' % self.version)
+
+        sig1.update(raw)
         sig = "$1$" + sig1.hexdigest()
 
         headers = { 'Content-type': 'application/json',
