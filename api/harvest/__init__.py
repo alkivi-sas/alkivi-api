@@ -312,6 +312,11 @@ class Entry(HarvestItemBase):
         """
         return self.harvest.task(self.task_id)
 
+    @property
+    def user(self):
+        """Return ... guest what ... associated user !
+        """
+        return self.harvest.user(self.user_id)
 
 class Invoice(HarvestItemBase):
     """Invoice binding for Harvest
