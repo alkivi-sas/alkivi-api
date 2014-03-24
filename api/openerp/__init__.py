@@ -94,6 +94,16 @@ class API:
         """
         return self.oerp.write_record(*args, **kwargs)
 
+    def unlink(self, *args, **kwargs):
+        """Wrapper for oerplib call
+        """
+        return self.oerp.unlink(*args, **kwargs)
+
+    def unlink_record(self, *args, **kwargs):
+        """Wrapper for oerplib call
+        """
+        return self.oerp.unlink_record(*args, **kwargs)
+
     def exec_workflow(self, *args, **kwargs):
         """Wrapper for oerplib call
         """
@@ -212,4 +222,114 @@ class API:
             raise Exception('Found multiple suppliers with name %s' % name)
 
         return self.browse('res.partner', supplier_ids[0])
+
+    def fetch_customer(self, name):
+        """Return openerp res.partner using name to search it
+
+        First try exact name, if no match then like
+        """
+
+        search_args = [
+                      ('name', '=', name),
+                      ('customer', '=', 1) ]
+        customer_ids = self.search('res.partner', search_args)
+        if not customer_ids:
+            search_args = [
+                          ('name', 'ilike', name),
+                          ('customer', '=', 1) ]
+            customer_ids = self.search('res.partner', search_args)
+
+        if not customer_ids:
+            raise Exception('Supplier %s not found' % name)
+        elif len(customer_ids) > 1:
+            raise Exception('Found multiple customers with name %s' % name)
+
+        return self.browse('res.partner', customer_ids[0])
+
+
+    def create_invoice(self, invoice_data, lines_data, attachment_data=None, state='draft', tax_amount=None):
+        """Global method that create an invoice and add lines to ir
+
+        invoice_data : dict with  necessary information to create invoice
+        lines_data : array with all lines data
+        state : draft or open
+        tax_check : TODO 
+        """
+
+        if not invoice_data:
+            raise Exception('Missing invoice_data')
+        if not lines_data:
+            raise Exception('Missing lines_data')
+        if state not in ('draft', 'open'):
+            raise Exception('State %s is not valid' % state)
+
+        # Create invoice
+        logger.debug_debug('going to create invoice with', invoice_data)
+        invoice_id = self.create('account.invoice', invoice_data)
+        logger.debug_debug('created invoice %d' % invoice_id)
+
+        # Create invoice_line
+        for line_data in lines_data:
+            line_data['invoice_id'] = invoice_id
+            logger.debug_debug('going to create invoice_line with', line_data)
+            invoice_line_id = self.create('account.invoice.line', line_data) 
+            logger.debug_debug('created invoice.line %d' % invoice_line_id)
+
+        # Compute taxes
+        result = self.execute('account.invoice', 'button_reset_taxes', [invoice_id])
+        if not result:
+            raise Exception('Unable to compute taxes, WTF')
+
+        # If tax_amount, check that taxes match
+        if tax_amount:
+            invoice = self.browse('account.invoice', invoice_id)
+            tax_lines = invoice.tax_line
+
+            # Check that we have only one tax line
+            number_of_tax_lines = 0
+            ok_tax_line = None
+
+            for tax_line in tax_lines:
+                ok_tax_line = tax_line
+                number_of_tax_lines += 1
+                logger.debug_debug('tax_line data', tax_line.__data__)
+
+            if number_of_tax_lines == 0:
+                raise Exception('No tax yet, we should have')
+
+            if number_of_tax_lines != 1:
+                raise Exception('Got multiple lines for tax, this is weird, should have only one line')
+            else:
+                # Fix amount, might be wrong usually one cents wrong
+                if tax_line.amount != tax_amount:
+                    message = 'Fix tax_line amount from %f to %f' % (tax_line.amount, tax_amount)
+                    if abs(tax_line.amount - tax_amount) > 0.02:
+                        logger.warning(message)
+                    else:
+                        logger.important(message)
+
+                    tax_line.amount = tax_amount
+
+                    # Update invoice : need to check parameters
+                    self.write_record(tax_line)
+                    logger.log('tax_line updated')
+
+
+        if state == 'open':
+            logger.debug_debug('going to execute workflow invoice_open')
+            self.exec_workflow('account.invoice', 'invoice_open', invoice_id)
+
+        if attachment_data:
+            logger.debug_debug('going to attach some data to invoice')
+
+            invoice = self.browse('account.invoice', invoice_id)
+            attachment_data['res_id'] = invoice.id
+            if invoice.number: 
+                attachment_data['res_name'] = invoice.number
+
+            attachment_id = self.create('ir.attachment', attachment_data)
+            logger.debug_debug('attached file %s to invoice, id=%d' % (attachment_data['name'], attachment_id))
+
+        return invoice_id
+
 
