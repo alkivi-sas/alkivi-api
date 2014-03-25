@@ -29,10 +29,13 @@ class APIError(Exception):
         super(APIError, self).__init__()
 
     def __str__(self):
-        error = self.response.json
-        return 'httpCode: %s errorCode: %s message: %s' % (error['httpCode'], 
-                                                           error['errorCode'], 
-                                                           error['message'])
+        error = json.loads(self.response.text)
+        msg = ''
+
+        for key in ('httpCode', 'errorCode', 'message'):
+            if key in error:
+                msg = msg + '%s: %s' % (key, error[key])
+        return msg
 
 class API:
     """Wrapper that use custom credentials file to perform operation
@@ -40,7 +43,7 @@ class API:
 
     def __init__(self, use_data, access_rules=None, 
                  application=None, secret=None, consumer_key=None,
-                 url='https://api.ovh.com/1.0'):
+                 url='https://api.ovh.com/1.0' ):
 
         if access_rules is None:
             access_rules = []
@@ -125,14 +128,18 @@ class API:
         """
         headers = { 'Content-type': 'application/json',
                     'X-Ovh-Application': self.application}
-        params = { 'access_rules': self.access_rules}
+
+        params = {}
+
+        if self.access_rules:
+            params['accessRules'] = self.access_rules
 
         if redirection:
             params['redirection'] = redirection
 
-        query = requests.post(self.url+'/auth/credential', headers=headers, 
+        response = requests.post(self.url+'/auth/credential', headers=headers, 
                               data=json.dumps(params))
-        print query.json
+        logger.info('test', json.loads(response.text))
 
     def get_drift(self):
         """Calculate the time drift between our server and ovh server
@@ -154,7 +161,16 @@ class API:
         url = self.url+path
 
         sig1 = hashlib.sha1()
-        sig1.update("+".join([self.secret, ckey, req_type, url, data, now]))
+
+        raw = None
+
+        if self.url == 'https://api.ovh.com/1.0':
+            raw = "+".join([self.secret, ckey, req_type, url, data, now])
+        else:
+            real_url = re.sub('(.*)api/1\.0', 'api/1.0', url)
+            raw = "+".join([self.secret, ckey, req_type, real_url, data, now])
+
+        sig1.update(raw)
         sig = "$1$" + sig1.hexdigest()
 
         headers = { 'Content-type': 'application/json',

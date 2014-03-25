@@ -78,8 +78,8 @@ class Session(sql.Model, Base):
     # Indexes
     indexes = []
     indexes.append(Index('idx_pca_id', pca_id))
-    indexes.append(Index('idx_ovh_state', ovh_state))
-    indexes.append(Index('idx_local_state', local_state))
+    indexes.append(Index('idx_session_ovh_state', ovh_state))
+    indexes.append(Index('idx_session_local_state', local_state))
 
 
     # Relationship
@@ -148,8 +148,8 @@ class File(sql.Model, Base):
     id = Column(String(45), primary_key=True)
     session_id = Column(String(45), ForeignKey('sessions.id'))
     name = Column(String(255))
-    file_name = Column(String(60))
-    file_type = Column(String(50))
+    file_name = Column(String(255))
+    file_type = Column(String(255))
     size = Column(BigInteger)
     sha1 = Column(String(40))
     sha256 = Column(String(64))
@@ -167,8 +167,8 @@ class File(sql.Model, Base):
     indexes.append(Index('idx_sha1', sha1))
     indexes.append(Index('idx_sha256', sha256))
     indexes.append(Index('idx_md5', md5))
-    indexes.append(Index('idx_ovh_state', ovh_state))
-    indexes.append(Index('idx_local_state', local_state))
+    indexes.append(Index('idx_file_ovh_state', ovh_state))
+    indexes.append(Index('idx_file_local_state', local_state))
 
 
     # Relationship
