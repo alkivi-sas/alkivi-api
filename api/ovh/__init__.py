@@ -104,7 +104,7 @@ class API:
     def post(self, path, params):
         """perform post"""
         if DEBUG:
-            logger.debug('[API OVH] Going to %s on %s' % (post, path) +
+            logger.debug('[API OVH] Going to %s on %s' % ('post', path) +
                          ' with params', params)
 
         return self._ovh_req(path, "POST", self.consumer_key, params)
